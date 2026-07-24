@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>11-785 学习 Schedule</title>
+    <style>
+        :root {
+            --ink: #17202a;
+            --muted: #667085;
+            --line: #e6e9ef;
+            --paper: #ffffff;
+            --wash: #f5f7fb;
+            --blue: #2563eb;
+            --blue-soft: #e8f0ff;
+            --green: #16805b;
+            --green-soft: #e8f7f0;
+            --amber: #a15c00;
+            --amber-soft: #fff4df;
+            --purple: #6d45b8;
+            --purple-soft: #f2ecff;
+            --shadow: 0 14px 38px rgba(31, 41, 55, .08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: var(--wash);
+            font: 15px/1.65 Inter, ui-sans-serif, system-ui, -apple-system,
+                BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+        }
+
+        a { color: var(--blue); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .page {
+            width: min(1220px, calc(100% - 32px));
+            margin: 32px auto 72px;
+        }
+
+        .hero {
+            color: #fff;
+            padding: 34px 36px 30px;
+            border-radius: 22px;
+            background:
+                radial-gradient(circle at 85% 10%, rgba(111, 158, 255, .32), transparent 34%),
+                linear-gradient(135deg, #14213d, #253b73 58%, #3568b8);
+            box-shadow: var(--shadow);
+        }
+
+        .eyebrow {
+            color: #c9d8ff;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .13em;
+            text-transform: uppercase;
+        }
+
+        h1, h2, h3, p { margin-top: 0; }
+        h1 { margin-bottom: 8px; font-size: clamp(28px, 4vw, 44px); line-height: 1.12; }
+        h2 { margin-bottom: 14px; font-size: 24px; line-height: 1.25; }
+        h3 { margin-bottom: 6px; font-size: 17px; line-height: 1.35; }
+        .hero p { max-width: 820px; margin-bottom: 24px; color: #e4ebff; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stat {
+            padding: 14px 16px;
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 14px;
+            background: rgba(255,255,255,.1);
+        }
+
+        .stat-label { color: #c9d8ff; font-size: 12px; }
+        .stat-value { margin-top: 2px; font-size: 18px; font-weight: 750; }
+
+        section {
+            margin-top: 24px;
+            padding: 26px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: var(--paper);
+            box-shadow: 0 5px 18px rgba(31, 41, 55, .035);
+        }
+
+        .section-lead { margin-bottom: 18px; color: var(--muted); }
+
+        .callout {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: center;
+            border-color: #cddcff;
+            background: linear-gradient(105deg, #f5f8ff, #fff);
+        }
+
+        .callout h2 { margin-bottom: 7px; color: #1c4dba; }
+        .callout p { margin-bottom: 0; }
+
+        .button {
+            display: inline-block;
+            padding: 9px 14px;
+            border-radius: 9px;
+            color: #fff;
+            background: var(--blue);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .button:hover { color: #fff; background: #1d4ed8; text-decoration: none; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .card {
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #fbfcfe;
+        }
+
+        .card p { margin-bottom: 8px; color: var(--muted); }
+        .card .number {
+            display: inline-grid;
+            width: 28px;
+            height: 28px;
+            margin-bottom: 12px;
+            place-items: center;
+            border-radius: 9px;
+            color: var(--blue);
+            background: var(--blue-soft);
+            font-weight: 800;
+        }
+
+        .card.next { border-color: #b9ccff; background: #f6f9ff; }
+        .card.next .number { color: #fff; background: var(--blue); }
+
+        .check {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--muted);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] { accent-color: var(--green); }
+
+        .progress-wrap { margin-top: 15px; }
+        .progress-track { height: 9px; overflow: hidden; border-radius: 99px; background: #e8edf5; }
+        .progress-fill { width: 18%; height: 100%; border-radius: inherit; background: var(--green); transition: width .2s ease; }
+        .progress-note { margin-top: 6px; color: var(--muted); font-size: 13px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 11px 10px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            color: #475467;
+            background: #f8fafc;
+            font-size: 12px;
+            letter-spacing: .02em;
+        }
+
+        tr:last-child td { border-bottom: 0; }
+        tr.is-done td { color: #587264; background: #fbfefc; }
+        tr.is-done td:nth-child(2) { text-decoration: line-through; text-decoration-color: #7bb99e; }
+
+        .table-scroll { overflow-x: auto; }
+        .table-scroll table { min-width: 720px; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge.done { color: var(--green); background: var(--green-soft); }
+        .badge.next { color: #1c4dba; background: var(--blue-soft); }
+        .badge.plan { color: var(--amber); background: var(--amber-soft); }
+        .badge.core { color: var(--purple); background: var(--purple-soft); }
+
+        .phase {
+            margin-top: 20px;
+            padding: 13px 15px;
+            border-left: 4px solid var(--blue);
+            border-radius: 8px;
+            background: #f7f9fd;
+            font-weight: 750;
+        }
+
+        .phase:first-child { margin-top: 0; }
+        .small { color: var(--muted); font-size: 13px; }
+        .muted { color: var(--muted); }
+        .nowrap { white-space: nowrap; }
+
+        details {
+            margin-top: 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+        }
+
+        summary {
+            padding: 13px 15px;
+            color: #344054;
+            font-weight: 750;
+            cursor: pointer;
+        }
+
+        details > div { padding: 0 15px 15px; }
+
+        footer {
+            margin-top: 22px;
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media (max-width: 800px) {
+            .page { width: min(100% - 20px, 1220px); margin-top: 10px; }
+            .hero, section { padding: 21px 18px; border-radius: 15px; }
+            .stats, .grid { grid-template-columns: 1fr 1fr; }
+            .callout { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 520px) {
+            .stats, .grid { grid-template-columns: 1fr; }
+            h1 { font-size: 31px; }
+        }
+    </style>
+</head>
+<body>
+<main class="page">
+    <header class="hero">
+        <div class="eyebrow">CMU 11-785 · Introduction to Deep Learning · Spring 2026</div>
+        <h1>个人学习 Schedule</h1>
+        <p>
+            这是按照课程仓库整理的自学路线。你的当前进度按课程编号记录为
+            <strong>Recitation 0.1–0.5 已完成</strong>；下一项是 Recitation 0.6。
+            课程原始日期仅作为参考，当前执行以内容顺序为准。
+        </p>
+        <div class="stats">
+            <div class="stat"><div class="stat-label">Recitations</div><div class="stat-value"><span id="done-count">5</span> / 28 完成</div></div>
+            <div class="stat"><div class="stat-label">当前任务</div><div class="stat-value">0.6 Tensordot</div></div>
+            <div class="stat"><div class="stat-label">Conda 环境</div><div class="stat-value">cmu-11785</div></div>
+            <div class="stat"><div class="stat-label">核心主线</div><div class="stat-value">MLP → CNN → RNN → Transformer</div></div>
+        </div>
+    </header>
+
+    <section class="callout">
+        <div>
+            <h2>现在开始：Recitation 0.6</h2>
+            <p>
+                完成 Tensordot &amp; Einsum notebook，重点理解 axes、维度收缩和 Einstein notation，
+                并分别用 NumPy 与 PyTorch 验证结果。
+            </p>
+        </div>
+        <a class="button" href="S26/documents/recitation_0/0.06/0_6_Tensordot_%26_Einsum.ipynb">打开 Notebook</a>
+    </section>
+
+    <section>
+        <h2>接下来 7 个学习单元</h2>
+        <p class="section-lead">建议每个单元完成“看材料 → 跑 notebook → 写小结 → 做一个可验证练习”。</p>
+        <div class="grid">
+            <article class="card next">
+                <span class="number">1</span>
+                <h3>Recitation 0.6</h3>
+                <p>Tensordot &amp; Einsum；掌握张量维度收缩和爱因斯坦求和。</p>
+                <label class="check"><input class="task" data-key="r0.6" type="checkbox"> 完成</label>
+            </article>
+            <article class="card">
+                <span class="number">2</span>
+                <h3>Lecture 1–3</h3>
+                <p>Introduction、Universal Approximation、Learning 和 ERM。</p>
+                <label class="check"><input class="task" data-key="lec1-3" type="checkbox"> 完成</label>
+            </article>
+            <article class="card">
+                <span class="number">3</span>
+                <h3>Lecture 4–5</h3>
+                <p>Gradient Descent、Training、Backpropagation 和反向传播微积分。</p>
+                <label class="check" ><input class="task" data-key="lec4-5" type="checkbox"> 完成</label>
+            </article>
+            <article class="card">
+                <span class="number">4</span>
+                <h3>Lab 1</h3>
+                <p>Your First MLP；能解释 forward、loss、backward 和参数更新。</p>
+                <label class="check"><input class="task" data-key="lab1" type="checkbox"> 完成</label>
+            </article>
+            <article class="card">
+                <span class="number">5</span>
+                <h3>HW1</h3>
+                <p>完成 HW1P1 / HW1P2；先通过最小可运行版本，再逐步优化。</p>
+                <label class="check"><input class="task" data-key="hw1" type="checkbox"> 完成</label>
+            </article>
+            <article class="card">
+                <span class="number">6</span>
+                <h3>资源与工程</h3>
+                <p>Recitation 0.7–0.13：GitHub、Colab、云平台、Kaggle、PSC。</p>
+                <label class="check"><input class="task" data-key="r0.7-0.13" type="checkbox"> 完成</label>
+            </article>
+        </div>
+        <div class="progress-wrap">
+            <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+            <div class="progress-note">复选框会保存在浏览器本地；Recitation 进度和近期任务可以直接勾选。</div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Recitation 总路线</h2>
+        <p class="section-lead">0.1–0.5 已完成；0.6 是当前下一步。0.7–0.13 是资源类内容，可以和课程主线并行。</p>
+        <div class="table-scroll">
+            <table>
+                <thead><tr><th>完成</th><th>编号</th><th>主题</th><th>模块</th><th>状态</th><th>材料</th></tr></thead>
+                <tbody>
+                    <tr data-row-key="r0.1"><td><input class="task" data-key="r0.1" type="checkbox" checked></td><td>0.1</td><td>Python Fundamentals</td><td>Python Programming + PyTorch</td><td><span class="badge done">已完成</span></td><td><a href="S26/documents/recitation_0/0.01/Python_basics_with_numpy.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.2"><td><input class="task" data-key="r0.2" type="checkbox" checked></td><td>0.2</td><td>Object Oriented Programming</td><td>Python Programming + PyTorch</td><td><span class="badge done">已完成</span></td><td><a href="S26/documents/recitation_0/0.02/OOP_Fundamentals.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.3"><td><input class="task" data-key="r0.3" type="checkbox" checked></td><td>0.3</td><td>NumPy Fundamentals</td><td>Python Programming + PyTorch</td><td><span class="badge done">已完成</span></td><td><a href="S26/documents/recitation_0/0.03/Rec_0_3_NumPy_Fundamentals_S26.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.4"><td><input class="task" data-key="r0.4" type="checkbox" checked></td><td>0.4</td><td>PyTorch</td><td>Python Programming + PyTorch</td><td><span class="badge done">已完成</span></td><td><a href="S26/documents/recitation_0/0.04/Recitation_0_4_PyTorch.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.5"><td><input class="task" data-key="r0.5" type="checkbox" checked></td><td>0.5</td><td>Notebooks and Conda Environments</td><td>Python Programming + PyTorch</td><td><span class="badge done">已完成</span></td><td><a href="S26/documents/recitation_0/0.05/notebook_example.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.6"><td><input class="task" data-key="r0.6" type="checkbox"></td><td>0.6</td><td>Tensordot &amp; Einsum</td><td>Python Programming + PyTorch</td><td><span class="badge next">下一项</span></td><td><a href="S26/documents/recitation_0/0.06/0_6_Tensordot_%26_Einsum.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.7"><td><input class="task" data-key="r0.7" type="checkbox"></td><td>0.7</td><td>GitHub</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.07/Git_Github_CheatSheet.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.8"><td><input class="task" data-key="r0.8" type="checkbox"></td><td>0.8</td><td>Google Colab</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.08/Google_colab_recitation_0_8.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.9"><td><input class="task" data-key="r0.9" type="checkbox"></td><td>0.9</td><td>Google Cloud Platform</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.09/0_9_Google_Cloud_Platform_VM_Setup.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.10"><td><input class="task" data-key="r0.10" type="checkbox"></td><td>0.10</td><td>Amazon Web Services</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td class="muted">视频 / 课程页面</td></tr>
+                    <tr data-row-key="r0.11"><td><input class="task" data-key="r0.11" type="checkbox"></td><td>0.11</td><td>Kaggle</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td class="muted">视频 / 课程页面</td></tr>
+                    <tr data-row-key="r0.12"><td><input class="task" data-key="r0.12" type="checkbox"></td><td>0.12</td><td>PSC I：How to connect</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td class="muted">课程页面</td></tr>
+                    <tr data-row-key="r0.13"><td><input class="task" data-key="r0.13" type="checkbox"></td><td>0.13</td><td>PSC II：Project resources</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td class="muted">课程页面</td></tr>
+                    <tr data-row-key="r0.14"><td><input class="task" data-key="r0.14" type="checkbox"></td><td>0.14</td><td>Datasets</td><td>Data Handling and Processing</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.14/0_14_Datasets_Part_1.ipynb">Part 1</a> · <a href="S26/documents/recitation_0/0.14/0_14_Datasets_Part_2.ipynb">Part 2</a></td></tr>
+                    <tr data-row-key="r0.15"><td><input class="task" data-key="r0.15" type="checkbox"></td><td>0.15</td><td>Dataloaders</td><td>Data Handling and Processing</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.15/Dataloaders.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.16"><td><input class="task" data-key="r0.16" type="checkbox"></td><td>0.16</td><td>Data Preprocessing</td><td>Data Handling and Processing</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.16/0_16_Data_Preprocessing_Part_1.ipynb">Part 1</a> · <a href="S26/documents/recitation_0/0.16/0_16_Data_Preprocessing_Part_2.ipynb">Part 2</a></td></tr>
+                    <tr data-row-key="r0.17"><td><input class="task" data-key="r0.17" type="checkbox"></td><td>0.17</td><td>Weights &amp; Biases (WandB)</td><td>Debugging &amp; Problem Solving</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.17/0.17_WandB.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.18"><td><input class="task" data-key="r0.18" type="checkbox"></td><td>0.18</td><td>Debugging</td><td>Debugging &amp; Problem Solving</td><td><span class="badge plan">计划</span></td><td class="muted">课程页面</td></tr>
+                    <tr data-row-key="r0.19"><td><input class="task" data-key="r0.19" type="checkbox"></td><td>0.19</td><td>What to Do When Struggling</td><td>Debugging &amp; Problem Solving</td><td><span class="badge plan">计划</span></td><td class="muted">课程页面</td></tr>
+                    <tr data-row-key="r0.20"><td><input class="task" data-key="r0.20" type="checkbox"></td><td>0.20</td><td>Losses Part 1</td><td>Algorithmic Techniques</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.20/0_20_Losses_Part_1.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.21"><td><input class="task" data-key="r0.21" type="checkbox"></td><td>0.21</td><td>Losses Part 2</td><td>Algorithmic Techniques</td><td><span class="badge plan">计划</span></td><td class="muted">课程页面</td></tr>
+                    <tr data-row-key="r0.22"><td><input class="task" data-key="r0.22" type="checkbox"></td><td>0.22</td><td>Block Processing</td><td>Algorithmic Techniques</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.22/0_22_Block_Processing.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.23"><td><input class="task" data-key="r0.23" type="checkbox"></td><td>0.23</td><td>Pipeline</td><td>Model Logistics</td><td><span class="badge plan">计划</span></td><td class="muted">课程页面</td></tr>
+                    <tr data-row-key="r0.24"><td><input class="task" data-key="r0.24" type="checkbox"></td><td>0.24</td><td>Distributed Training</td><td>Model Logistics</td><td><span class="badge plan">计划</span></td><td class="muted">课程页面</td></tr>
+                    <tr data-row-key="r0.25"><td><input class="task" data-key="r0.25" type="checkbox"></td><td>0.25</td><td>Saving &amp; Loading Models</td><td>Model Logistics</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.25/rec0_25_Saving_%26_Loading_Model.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.26"><td><input class="task" data-key="r0.26" type="checkbox"></td><td>0.26</td><td>Workflow of HWs — Part 1s</td><td>Model Logistics</td><td><span class="badge plan">计划</span></td><td class="muted">课程页面</td></tr>
+                    <tr data-row-key="r0.27"><td><input class="task" data-key="r0.27" type="checkbox"></td><td>0.27</td><td>Workflow of HWs — Part 2s</td><td>Model Logistics</td><td><span class="badge plan">计划</span></td><td class="muted">课程页面</td></tr>
+                    <tr data-row-key="r0.28"><td><input class="task" data-key="r0.28" type="checkbox"></td><td>0.28</td><td>Workflow of Project</td><td>Model Logistics</td><td><span class="badge plan">计划</span></td><td class="muted">课程页面</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>核心课程主线</h2>
+        <p class="section-lead">Recitation 是工具和工程支持；Lecture、Lab、HW 是主线。建议不要等到所有资源类 Recitation 完成后才开始 MLP。</p>
+        <div class="table-scroll">
+            <table>
+                <thead><tr><th>课程阶段</th><th>Lectures</th><th>主题</th><th>配套 Lab / 目标</th></tr></thead>
+                <tbody>
+                    <tr><td>基础与训练</td><td>1–5</td><td>Introduction、Universal Approximation、ERM、Gradient Descent、Backpropagation</td><td>Lab 1：Your First MLP；开始 HW1</td></tr>
+                    <tr><td>优化与正则化</td><td>6–8</td><td>Loss Surfaces、Momentum、SGD / Mini-batch、Optimizers、Regularizers、BatchNorm、Dropout</td><td>Lab 2–4：Debugging、Ablations / Tuning、Autograd</td></tr>
+                    <tr><td>CNN</td><td>9–12</td><td>Convolutional Neural Networks I–IV</td><td>Lab 5–6：CNN Basics and Backprop、Classification and Verification；HW2 主线</td></tr>
+                    <tr><td>序列模型</td><td>13–16</td><td>RNN、Seq2Seq、CTC、Blanks、Beam Search</td><td>Lab 7–9：RNN、Kaggle / Pre-trained Models、CTC / Beam Search；HW3 主线</td></tr>
+                    <tr><td>语言模型与 Transformer</td><td>17–20</td><td>Language Models、Translation、Attention、Transformers、LLMs</td><td>Lab 10–11：Attention / MT / LAS、Transformers；HW4 主线</td></tr>
+                    <tr><td>生成模型</td><td>21–24</td><td>Representation、Autoencoders、VAE、Diffusion、GAN</td><td>Lab 12–14：VAE、NF / Stable Diffusion、GAN</td></tr>
+                    <tr><td>其他模型</td><td>25–28</td><td>GNN、Reinforcement Learning、Hopfield Networks、Boltzmann Machines</td><td>Lab 15：Graph Neural Networks；完成 project / 复习</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>自学阶段 Schedule</h2>
+        <div class="table-scroll">
+            <table>
+                <thead><tr><th>阶段</th><th>先学什么</th><th>完成标准</th><th>建议产出</th></tr></thead>
+                <tbody>
+                    <tr><td>Stage 0<br><span class="small">已完成 0.1–0.5</span></td><td>Python、OOP、NumPy、PyTorch、Conda / Notebook</td><td>能在 `cmu-11785` 中运行 NumPy、PyTorch、Matplotlib 和 Jupyter</td><td>环境检查 cell；基础数组 / Tensor 练习</td></tr>
+                    <tr><td>Stage 1<br><span class="small">当前</span></td><td>0.6 + Lecture 1–5 + Lab 1</td><td>能解释 einsum、forward、loss、gradient、backprop 和 optimizer</td><td>完成 0.6 notebook；训练一个最小 MLP</td></tr>
+                    <tr><td>Stage 2</td><td>0.7–0.13 + Lecture 6–8 + Lab 2–4</td><td>能复现实验、调参、定位训练问题，并理解 autograd</td><td>实验记录；HW1 可运行版本</td></tr>
+                    <tr><td>Stage 3</td><td>0.14–0.16 + Lecture 9–12 + Lab 5–6</td><td>能使用 Dataset / DataLoader 完成 CNN 训练与验证</td><td>HW2；训练曲线与错误分析</td></tr>
+                    <tr><td>Stage 4</td><td>0.17–0.19 + Lecture 13–16 + Lab 7–9</td><td>能处理变长序列、CTC、beam search，并使用 WandB 调试</td><td>HW3；模型和数据 pipeline 说明</td></tr>
+                    <tr><td>Stage 5</td><td>0.20–0.25 + Lecture 17–24 + Lab 10–14</td><td>能理解 loss 选择、Transformer、VAE、Diffusion、GAN 的基本训练逻辑</td><td>HW4；至少复现一个生成 / 序列模型实验</td></tr>
+                    <tr><td>Stage 6</td><td>0.26–0.28 + Lecture 25–28 + Lab 15</td><td>能组织完整项目：数据、模型、训练、保存、评估和报告</td><td>Project；最终复习笔记</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>Spring 2026 原始课程日历</h2>
+        <p class="section-lead">这些日期来自课程仓库，仅用于恢复原始 schedule；现在请按上面的 Stage 顺序自学。</p>
+        <details open>
+            <summary>Lectures 0–28</summary>
+            <div class="table-scroll">
+                <table>
+                    <thead><tr><th>Lecture</th><th>原始日期</th><th>主题</th></tr></thead>
+                    <tbody>
+                        <tr><td>0</td><td>Jan 5</td><td>Course Logistics、Learning Objectives、Grading、Deadlines</td></tr>
+                        <tr><td>1</td><td>Jan 12</td><td>Introduction</td></tr>
+                        <tr><td>2</td><td>Jan 14</td><td>Neural Nets as Universal Approximators</td></tr>
+                        <tr><td>3</td><td>Jan 16</td><td>Training I：Problem of Learning、Empirical Risk Minimization</td></tr>
+                        <tr><td>4</td><td>Jan 21</td><td>Training II：Gradient Descent、Training the Network</td></tr>
+                        <tr><td>5</td><td>Jan 26</td><td>Training III：Backpropagation、Calculus of Backpropagation</td></tr>
+                        <tr><td>6</td><td>Jan 28</td><td>Training IV：Convergence、Loss Surfaces、Momentum</td></tr>
+                        <tr><td>7</td><td>Feb 2</td><td>Training V：Optimization、Batch Size、SGD、Mini-batch、Second-order Methods</td></tr>
+                        <tr><td>8</td><td>Feb 4</td><td>Training VI：Optimizers、Regularizers、Batch Normalization、Dropout</td></tr>
+                        <tr><td>9–12</td><td>Feb 9–18</td><td>Convolutional Neural Networks I–IV</td></tr>
+                        <tr><td>13–14</td><td>Feb 23–25</td><td>Recurrent Neural Networks I–II</td></tr>
+                        <tr><td>15–16</td><td>Mar 9–11</td><td>Seq2Seq、CTC、Blanks、Beam Search</td></tr>
+                        <tr><td>17</td><td>Mar 16</td><td>Language Models、Translation</td></tr>
+                        <tr><td>18–20</td><td>Mar 18–25</td><td>Attention、Transformers、新架构、Large Language Models</td></tr>
+                        <tr><td>21–24</td><td>Mar 30–Apr 8</td><td>Representation、Autoencoders、VAE、Diffusion、GAN</td></tr>
+                        <tr><td>25–28</td><td>Apr 13–22</td><td>GNN、Reinforcement Learning、Hopfield、Boltzmann Machines</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        <details>
+            <summary>Labs 1–15</summary>
+            <div class="table-scroll">
+                <table>
+                    <thead><tr><th>Lab</th><th>原始日期</th><th>主题</th><th>材料</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td>Jan 17</td><td>Your First MLP</td><td><a href="S26/documents/labs/lab_1/S26_Lab1_Your_First_MLP.ipynb">Notebook</a></td></tr>
+                        <tr><td>2</td><td>Jan 23</td><td>Debugging</td><td class="muted">课程页面（仓库未提供本地 Notebook）</td></tr>
+                        <tr><td>3</td><td>Jan 30</td><td>Ablations、Hyperparameter Tuning Methods、Normalizations</td><td class="muted">课程页面</td></tr>
+                        <tr><td>4</td><td>Feb 6</td><td>Computing Derivatives and Autograd</td><td><a href="S26/documents/labs/lab_4/IDL_S26_Lab_4_Computing_Derivatives_%26_Autograd(Students).ipynb">Notebook</a></td></tr>
+                        <tr><td>5</td><td>Feb 13</td><td>CNN：Basics and Backprop</td><td><a href="S26/documents/labs/lab_5/CNN_Basics_Student_Notebook.ipynb">Notebook</a></td></tr>
+                        <tr><td>6</td><td>Feb 20</td><td>CNN：Classification and Verification</td><td><a href="S26/documents/labs/lab_6/S26_CNN_lab06.ipynb">Notebook</a></td></tr>
+                        <tr><td>7</td><td>Feb 27</td><td>RNN Basics</td><td><a href="S26/documents/labs/lab_7/S26_StudentNotebook_RNN_Lab_7.ipynb">Notebook</a></td></tr>
+                        <tr><td>8</td><td>Mar 6</td><td>Kaggle Workshop and Pre-trained Models</td><td class="muted">课程页面</td></tr>
+                        <tr><td>9</td><td>Mar 13</td><td>CTC and Beam Search</td><td><a href="S26/documents/labs/lab_9/S26%20lab9_student_notebook.ipynb">Notebook</a></td></tr>
+                        <tr><td>10</td><td>Mar 20</td><td>Attention、MT、LAS</td><td><a href="S26/documents/labs/lab_10/Student_Notebook_Lab_10.ipynb">Notebook</a></td></tr>
+                        <tr><td>11</td><td>Mar 27</td><td>Transformers</td><td><a href="S26/documents/labs/lab_11/Lab_11_Transformers_S26_Student_Version.ipynb">Notebook</a></td></tr>
+                        <tr><td>12</td><td>Apr 3</td><td>Variational Autoencoders</td><td class="muted">课程页面</td></tr>
+                        <tr><td>13</td><td>Apr 10</td><td>NF and Stable Diffusion</td><td class="muted">课程页面</td></tr>
+                        <tr><td>14</td><td>Apr 17</td><td>GAN</td><td class="muted">课程页面</td></tr>
+                        <tr><td>15</td><td>Apr 24</td><td>Graph Neural Networks</td><td class="muted">课程页面</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        <details>
+            <summary>Assignments milestones</summary>
+            <div class="table-scroll">
+                <table>
+                    <thead><tr><th>Assignment</th><th>Release</th><th>Early deadline</th><th>Final deadline</th></tr></thead>
+                    <tbody>
+                        <tr><td>HW1P1 / HW1P2</td><td>Jan 14</td><td>Jan 23 11:59 PM</td><td>Feb 6 11:59 PM</td></tr>
+                        <tr><td>HW2P1 / HW2P2</td><td>Feb 6</td><td>Feb 20 11:59 PM</td><td>Feb 27 11:59 PM</td></tr>
+                        <tr><td>HW3P1 / HW3P2</td><td>Feb 27</td><td>Mar 20 11:59 PM</td><td>Mar 27 11:59 PM</td></tr>
+                        <tr><td>HW4P1 / HW4P2</td><td>Mar 27</td><td>Apr 13 11:59 PM</td><td>Apr 24 11:59 PM</td></tr>
+                        <tr><td>Bonus / Autograd</td><td colspan="3">Apr 24 11:59 PM</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </section>
+
+    <section>
+        <h2>每个学习单元的完成标准</h2>
+        <div class="grid">
+            <article class="card"><h3>理解</h3><p>能用自己的话解释核心概念，并写出关键公式或 Tensor shape。</p></article>
+            <article class="card"><h3>实现</h3><p>能在 `cmu-11785` 中运行 notebook，知道每个输入、输出和设备位置。</p></article>
+            <article class="card"><h3>验证</h3><p>至少做一个小实验：改变 shape、参数、loss 或 optimizer，并解释结果。</p></article>
+        </div>
+    </section>
+
+    <footer>
+        来源：仓库中的 <a href="S26/pages/tables/recitations.html">Recitations table</a>、
+        <a href="S26/pages/tables/lectures_table.html">Lectures table</a> 和
+        <a href="S26/pages/tables/assignments_table.html">Assignments table</a>。
+        本页的勾选状态只保存在当前浏览器。
+    </footer>
+</main>
+
+<script>
+    (() => {
+        const storageKey = "cmu-11785-study-schedule-v1";
+        const boxes = [...document.querySelectorAll(".task")];
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch (_) {}
+
+        const save = () => {
+            const state = {};
+            boxes.forEach(box => { state[box.dataset.key] = box.checked; });
+            try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch (_) {}
+        };
+
+        const syncKey = key => {
+            const same = boxes.filter(box => box.dataset.key === key);
+            const checked = same.some(box => box.checked);
+            same.forEach(box => { box.checked = checked; });
+            document.querySelectorAll(`[data-row-key="${key}"]`).forEach(row => row.classList.toggle("is-done", checked));
+        };
+
+        boxes.forEach(box => {
+            if (Object.prototype.hasOwnProperty.call(saved, box.dataset.key)) box.checked = !!saved[box.dataset.key];
+            box.addEventListener("change", () => { syncKey(box.dataset.key); save(); updateProgress(); });
+        });
+
+        const updateProgress = () => {
+            const recitations = [...new Set(boxes.map(box => box.dataset.key).filter(key => key.startsWith("r0.")))];
+            const done = recitations.filter(key => boxes.some(box => box.dataset.key === key && box.checked)).length;
+            document.getElementById("done-count").textContent = done;
+            document.getElementById("progress-fill").style.width = `${(done / recitations.length) * 100}%`;
+        };
+
+        [...new Set(boxes.map(box => box.dataset.key))].forEach(syncKey);
+        updateProgress();
+    })();
+</script>
+</body>
+</html>
