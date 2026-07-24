@@ -1,0 +1,13 @@
+name: cmu-11785
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  - pip
+  - ipykernel
+  - numpy
+  - matplotlib
+  - pysocks
+  - pip:
+      - torch==2.13.0
+      - torchvision==0.28.0
