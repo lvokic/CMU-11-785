@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="250" viewBox="0 0 760 250">
+  <rect width="100%" height="100%" fill="white"/>
+  <style>text{font-family:monospace;font-size:14px;fill:#222}.title{font-weight:bold;font-size:17px}</style>
+  <text x="20" y="28" class="title">Expected Output 1: pad_ending_pattern(spectrograms)</text>
+  <text x="20" y="65">utterance 0</text><text x="35" y="88">[3 1 4 1]</text><text x="35" y="109">[5 9 2 6]</text><text x="35" y="130">[5 3 5 8]</text><text x="35" y="151">[5 3 5 8]</text>
+  <text x="270" y="65">utterance 1</text><text x="285" y="88">[9 7 9 3]</text><text x="285" y="109">[2 3 8 4]</text><text x="285" y="130">[2 3 8 4]</text><text x="285" y="151">[9 7 9 3]</text>
+  <text x="520" y="65">utterance 2</text><text x="535" y="88">[6 2 6 4]</text><text x="535" y="109">[3 3 8 3]</text><text x="535" y="130">[2 7 9 5]</text><text x="535" y="151">[0 2 8 8]</text>
+</svg>
