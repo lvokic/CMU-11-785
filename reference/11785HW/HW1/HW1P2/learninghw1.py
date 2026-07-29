@@ -1,105 +1,102 @@
+"""Dataset and training hooks for HW1P2.
+
+The data directory must contain train.npy, train_labels.npy, dev.npy,
+dev_labels.npy, and test.npy. The utterances have variable numbers of
+frames, with 40 features per frame.
+"""
+
 import os
+
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.utils.data
-from torch.utils.data.dataset import T_co
-from utils.base import Params, Learning
-from tqdm import tqdm
+from torch.utils.data import Dataset
 
-num_workers = 8
+from utils.base import Learning, Params
+
+
+NUM_WORKERS = 0
+N_FEATURES = 40
 
 
 class ParamsHW1(Params):
-    def __init__(self, K=15, B=32768, lr=1e-3, max_epoch=201, is_double=False,
-                 data_dir='c:/DLData/11785_data/HW1', dropout=0.5, device='cuda:0'):
-        super(ParamsHW1, self).__init__(B=B, lr=lr, max_epoch=max_epoch,
-                                        data_dir=data_dir, is_double=is_double, device=device)
+    def __init__(
+        self,
+        K=5,
+        B=1024,
+        lr=1e-3,
+        max_epoch=20,
+        is_double=False,
+        data_dir="",
+        dropout=0.0,
+        device="cuda:0",
+    ):
+        super().__init__(
+            B=B,
+            lr=lr,
+            max_epoch=max_epoch,
+            is_double=is_double,
+            data_dir=data_dir,
+            device=device,
+        )
         self.K = K
         self.dropout = dropout
-        self.str = 'k=' + str(self.K) + 'b=' + str(self.B) + 'd=' + str(self.dropout) + 'lr=' + str(
-                self.lr) + ('_double_' if is_double else '_float_')
+        dtype_name = "double" if is_double else "float"
+        self.str = f"k={K}b={B}d={dropout}lr={lr}_{dtype_name}_"
 
     def __str__(self):
         return self.str
 
 
-class DatasetHW1(torch.utils.data.Dataset):
+class DatasetHW1(Dataset):
+    """Map utterance/frame pairs to padded context windows.
+
+    TODO: load the utterances, pad each utterance on both sides by K zero
+    frames, build a lookup from global index to (utterance_id, frame_id), and
+    return a flattened context window from __getitem__.
+    """
+
     def __init__(self, X_dir, Y_dir, context_K, data_type=torch.float):
-        super(DatasetHW1, self).__init__()
-        X = np.load(X_dir, allow_pickle=True)
-        self.test = Y_dir is None
-        self.N = X.shape[0]
+        super().__init__()
         self.K = context_K
-        self.look_up = []
-        pad_size = (self.K, 40)
-        self.X = []  # N,[(K+?+K),40]
-        for u_id, x in enumerate(X):
-            self.X.append(torch.cat([torch.zeros(pad_size), torch.as_tensor(x, dtype=data_type),
-                                     torch.zeros(pad_size)], dim=0))
-            for frame_id in range(x.shape[0]):
-                self.look_up.append((u_id, frame_id))
-        self.X = np.asarray(self.X, dtype=object)
+        self.data_type = data_type
+        self.test = Y_dir is None
 
-        if not self.test:
-            Y = np.load(Y_dir, allow_pickle=True)
-            self.Y = [torch.as_tensor(y, dtype=torch.long) for y in Y]
-            self.Y = np.asarray(self.Y, dtype=object)
-        print(X_dir, self.__len__())
+        # TODO: implement data loading and padding.
+        self.X = np.load(X_dir, allow_pickle=True)
+        self.Y = None if self.test else np.load(Y_dir, allow_pickle=True)
+        self.lookup = []
 
-    def __getitem__(self, index) -> T_co:
-        u_id, frame_id = self.look_up[index]
-        if self.test:
-            return torch.flatten(self.X[u_id][frame_id:self.K * 2 + frame_id + 1])
-        else:
-            return (torch.flatten(self.X[u_id][frame_id:self.K * 2 + frame_id + 1]),
-                    self.Y[u_id][frame_id])
+        raise NotImplementedError("Implement DatasetHW1 preprocessing")
 
     def __len__(self):
-        return len(self.look_up)
+        return len(self.lookup)
+
+    def __getitem__(self, index):
+        raise NotImplementedError("Implement DatasetHW1.__getitem__")
 
 
 class LearningHW1(Learning):
+    """Data-loader and submission hooks used by utils.base.Learning."""
+
     def __init__(self, params: ParamsHW1, model):
-        super(LearningHW1, self).__init__(params, model, torch.optim.Adam, nn.CrossEntropyLoss)
-        print(str(self))
+        super().__init__(params, model, torch.optim.Adam, nn.CrossEntropyLoss)
 
-        self.train_X = os.path.join(params.data_dir, 'train.npy')  # N,?,40
-        self.train_Y = os.path.join(params.data_dir, 'train_labels.npy')  # N,?
-        self.valid_X = os.path.join(params.data_dir, 'dev.npy')  # N,?,40
-        self.valid_Y = os.path.join(params.data_dir, 'dev_labels.npy')
-        self.test_X = os.path.join(params.data_dir, 'test.npy')
-
+        self.train_X = os.path.join(params.data_dir, "train.npy")
+        self.train_Y = os.path.join(params.data_dir, "train_labels.npy")
+        self.valid_X = os.path.join(params.data_dir, "dev.npy")
+        self.valid_Y = os.path.join(params.data_dir, "dev_labels.npy")
+        self.test_X = os.path.join(params.data_dir, "test.npy")
         self.dtype = torch.double if params.is_double else torch.float
 
     def _load_train(self):
-        self.train_loader = torch.utils.data.DataLoader(
-                DatasetHW1(self.train_X, self.train_Y, self.params.K, self.dtype),
-                batch_size=self.params.B,
-                shuffle=True, pin_memory=True, num_workers=num_workers)
+        raise NotImplementedError("Create the training Dataset and DataLoader")
 
     def _load_valid(self):
-        self.valid_loader = torch.utils.data.DataLoader(
-                DatasetHW1(self.valid_X, self.valid_Y, self.params.K, self.dtype),
-                batch_size=self.params.B,
-                shuffle=False, pin_memory=True, num_workers=num_workers)
+        raise NotImplementedError("Create the validation Dataset and DataLoader")
 
     def _load_test(self):
-        self.test_loader = torch.utils.data.DataLoader(
-                DatasetHW1(self.test_X, None, self.params.K, self.dtype), batch_size=1,
-                shuffle=False,
-                pin_memory=True, num_workers=num_workers)
+        raise NotImplementedError("Create the test Dataset and DataLoader")
 
     def test(self):
-        if self.test_loader is None:
-            self._load_test()
-        # print('testing...')
-        with open('results/' + str(self) + '.csv', 'w') as f:
-            f.write('id,label')
-            with torch.cuda.device(self.device):
-                with torch.no_grad():
-                    self.model.eval()
-                    for i, item in enumerate(tqdm(self.test_loader)):
-                        x = item.to(self.device)
-                        label = torch.argmax(self.model(x), dim=1).item()
-                        f.write('\n' + str(i) + ',' + str(label))
+        raise NotImplementedError("Write predictions in the Kaggle CSV format")
