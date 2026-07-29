@@ -6,7 +6,7 @@ import numpy as np
 import math
 
 
-class Linear():
+class Linear:
     def __init__(self, in_feature, out_feature, weight_init_fn, bias_init_fn):
         """
         Argument:
@@ -40,7 +40,8 @@ class Linear():
         Return:
             out (np.array): (batch size, out feature)
         """
-        raise NotImplemented
+        self.X = x
+        return x @ self.W + self.b
 
     def backward(self, delta: np.ndarray):
         """
@@ -49,16 +50,22 @@ class Linear():
         Return:
             out (np.array): (batch size, in feature)
         """
-        raise NotImplemented
+        if self.X is None:
+          raise RuntimeError("Call forward() before backward()")
+      
+        batch_size = self.X.shape[0]
+        self.dW = (self.X.T @ delta) / batch_size
+        self.db = np.mean(delta, axis=0, keepdims=True)
+        return delta @ self.W.T
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     def init_func(dim1, dim2=None):
         if dim2 is None:
             return np.random.random((1, dim1))
         else:
             return np.random.random((dim1, dim2))
-
 
     x = np.random.random((10, 5))
 
