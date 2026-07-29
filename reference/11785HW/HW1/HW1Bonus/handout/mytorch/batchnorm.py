@@ -47,20 +47,17 @@ class BatchNorm(object):
         """
 
         if eval:
-            norm = (x - self.running_mean) / np.sqrt(self.running_var + self.eps)  # ???
-            return self.gamma * norm + self.beta  # ???
+            norm = (x - self.running_mean) / np.sqrt(self.running_var + self.eps)
+            self.out = self.gamma * norm + self.beta
+            return self.out
 
         self.x = x
-
         self.mean = np.mean(x, axis=0, keepdims=True)
-        self.var = np.sum((x - self.mean) ** 2, axis=0, keepdims=True) / x.shape[0]
-        self.norm = (x - self.mean) / np.sqrt(self.var + self.eps)  # ???
-        self.out = self.gamma * self.norm + self.beta  # ???
-
-        # Update running batch statistics
+        self.var = np.mean((x - self.mean) ** 2, axis=0, keepdims=True)
+        self.norm = (x - self.mean) / np.sqrt(self.var + self.eps)
+        self.out = self.gamma * self.norm + self.beta
         self.running_mean = self.alpha * self.running_mean + (1 - self.alpha) * self.mean
         self.running_var = self.alpha * self.running_var + (1 - self.alpha) * self.var
-
         return self.out
 
     def backward(self, delta):
@@ -71,21 +68,41 @@ class BatchNorm(object):
             out (np.array): (batch size, in feature)
         """
 
-        dnorm = delta * self.gamma
+        if self.x is None or self.norm is None:
+            raise RuntimeError("Call training forward() before backward()")
 
+        x = self.x
+        mean = self.mean
+        var = self.var
+        norm = self.norm
+        batch_size = x.shape[0]
+
+        centered = x - mean
+        inv_std = (var + self.eps) ** (-0.5)
+
+        derivative_x_hat = delta * self.gamma
         self.dbeta = np.sum(delta, axis=0, keepdims=True)
-        self.dgamma = np.sum(delta * self.norm, axis=0, keepdims=True)
+        self.dgamma = np.sum(delta * norm, axis=0, keepdims=True)
 
-        dvar = -0.5 * np.sum(dnorm * (self.x - self.mean) * np.power(self.var + self.eps, -1.5),
-                             axis=0, keepdims=True)
-
-        dmean = -np.sum(dnorm * np.power(self.var + self.eps, -0.5), axis=0, keepdims=True) - 2 / \
-                self.x.shape[0] * dvar * np.sum(self.x - self.mean, axis=0, keepdims=True)
-
-        out = dnorm * np.power(self.var + self.eps, -0.5) + dvar * 2 / self.x.shape[0] * (
-                self.x - self.mean) + dmean / self.x.shape[0]
-
-        return out
+        derivative_var = -0.5 * np.sum(
+            derivative_x_hat
+            * centered
+            * (var + self.eps) ** (-1.5),
+            axis=0,
+            keepdims=True
+        )
+        derivative_mean = (
+            -np.sum(derivative_x_hat * inv_std, axis=0, keepdims=True)
+            - (2.0 / batch_size)
+            * derivative_var
+            * np.sum(centered, axis=0, keepdims=True)
+        )
+        derivative = (
+            derivative_x_hat * inv_std
+            + derivative_var * (2.0 / batch_size) * centered
+            + derivative_mean / batch_size
+        )
+        return derivative
 
 
 if __name__ == '__main__':

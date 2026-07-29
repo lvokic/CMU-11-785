@@ -17,12 +17,11 @@ class Dropout:
         # 1) Get and apply a mask generated from np.random.binomial
         # 2) Scale your output accordingly
         # 3) During test time, you should not apply any mask or scaling.
-        if not train:
+        if train==True:
+            self.mask = np.random.binomial(1, self.p, size=(x.shape[0], x.shape[1]))
+            return x * self.mask / self.p
+        else:
             return x
-
-        self.mask = np.random.binomial(1, self.p, x.shape)
-
-        return x * self.mask / self.p
 
     def backward(self, delta):
         # 1) This method is only called during training.

@@ -80,8 +80,7 @@ class Tanh(Activation):
         super(Tanh, self).__init__()
 
     def forward(self, x):
-        exp = np.exp(x)
-        self.state = (exp - 1 / exp) / (exp + 1 / exp)
+        self.state = np.tanh(x)
         return self.state
 
     def derivative(self):
@@ -98,11 +97,9 @@ class ReLU(Activation):
 
     def forward(self, x):
         x = np.asarray(x)
-        self.state = np.zeros_like(x)
-        self.state[x > 0] = x[x > 0]
+        mask = x > 0
+        self.state = np.where(mask, x, 0)
         return self.state
 
     def derivative(self):
-        res = np.zeros_like(self.state)
-        res[self.state > 0] = 1
-        return res
+        return (self.state > 0).astype(float)

@@ -12,9 +12,6 @@ def log_sum_exp(x: np.ndarray) -> np.ndarray:
     :return: (batch,)
     """
     a = np.max(x, axis=1, keepdims=True)
-
-    # t = np.exp(x - a)
-
     return a + np.log(np.sum(np.exp(x - a), axis=1, keepdims=True))
 
 
@@ -53,6 +50,11 @@ class SoftmaxCrossEntropy(Criterion):
         super(SoftmaxCrossEntropy, self).__init__()
         self.prediction = None
 
+    # 交叉熵：
+    #   loss = -sum(y_c * log(p_c))
+    #   Softmax 概率：
+    #   p_c = exp(z_c) / sum(exp(z_j))
+
     def forward(self, x, y):
         """
         Argument:
@@ -61,13 +63,11 @@ class SoftmaxCrossEntropy(Criterion):
         Return:
             out (np.array): (batch size, )
         """
+        log_sum = log_sum_exp(x)
         self.logits = x
         self.labels = y
-
-        # log(sigma) = log(e^x)-log_sum = x-log_sum
-        # so sigma = exp(x-log_sum)
-        log_sigma = x - log_sum_exp(x)  # batch*10
-        self.prediction = np.exp(log_sigma)  # batch*10
+        log_sigma = x - log_sum
+        self.prediction = np.exp(log_sigma)
         self.loss = -np.sum(y * log_sigma, axis=1)
         return self.loss
 

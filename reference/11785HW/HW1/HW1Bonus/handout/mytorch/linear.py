@@ -29,6 +29,7 @@ class Linear:
 
         self.X: Optional[np.ndarray] = None
 
+        # Parameters used by the Adam optimizer.
         self.mean_dW = np.zeros_like(self.dW)
         self.mean_db = np.zeros_like(self.db)
 
@@ -55,29 +56,13 @@ class Linear:
         Return:
             out (np.array): (batch size, in feature)
         """
-        # raise NotImplemented
-        # y_bo = \sum_i^IN (x_bi*w_io) + b_o
-        # dy_bo/dW_io = x_bi
-        # dL/dy_bo = delta_bo
-        # dL/dW_io = x_bi*delta_bo via b in batch
-        # average on batch, because in parallel.
-        B = self.X.shape[0]
-        I = self.X.shape[1]
-        O = delta.shape[1]
-        self.dW = np.mean(self.X.reshape((B, I, 1)) * delta.reshape((B, 1, O)), axis=0)
+        if self.X is None:
+            raise RuntimeError("Call forward() before backward()")
 
-        # dy_bo/db_o = 1
-        # dL/db_o = delta_bo via b in batch -> mean
-
-        self.db = np.mean(delta, axis=0).reshape(1, -1)
-
-        # dy_bo/dx_bi = w_io
-        # where is x_bi used? in y_bO for all O, so we should sum over O to account for all pDs
-
-        dX = delta.reshape((B, 1, O)) * self.W.reshape((1, I, O))
-        dX = np.sum(dX, axis=2)
-
-        return dX
+        batch_size = self.X.shape[0]
+        self.dW = (self.X.T @ delta) / batch_size
+        self.db = np.mean(delta, axis=0, keepdims=True)
+        return delta @ self.W.T
 
 
 if __name__ == '__main__':
@@ -88,10 +73,10 @@ if __name__ == '__main__':
             return np.random.random((dim1, dim2))
 
 
-    x1 = np.random.random((10, 5))
+    x = np.random.random((10, 5))
 
     l = Linear(5, 3, init_func, init_func)
 
-    y = l(x1)
+    y = l(x)
 
     t = 1

@@ -26,11 +26,11 @@ import numpy as np
 import os
 import sys
 
-sys.path.append('mytorch')
-from loss import *
-from activation import *
-from batchnorm import *
-from linear import *
+from mytorch.loss import *
+from mytorch.activation import *
+from mytorch.batchnorm import *
+from mytorch.linear import *
+
 from typing import List
 
 
@@ -39,9 +39,19 @@ class MLP(object):
     A simple multilayer perceptron
     """
 
-    def __init__(self, input_size, output_size, hiddens, activations: List[Activation],
-                 weight_init_fn,
-                 bias_init_fn, criterion, lr, momentum=0.0, num_bn_layers=0):
+    def __init__(
+        self,
+        input_size,
+        output_size,
+        hiddens,
+        activations: List[Activation],
+        weight_init_fn,
+        bias_init_fn,
+        criterion,
+        lr,
+        momentum=0.0,
+        num_bn_layers=0,
+    ):
 
         # Don't change this -->
         self.train_mode = True
@@ -64,26 +74,19 @@ class MLP(object):
         # (HINT: self.foo = [ bar(???) for ?? in ? ])
         # (HINT: Can you use zip here?)
         self.linear_layers = []
-        if len(hiddens) == 0:
-            self.linear_layers.append(Linear(input_size, output_size, weight_init_fn, bias_init_fn))
-        else:
-            self.linear_layers.append(Linear(input_size, hiddens[0], weight_init_fn, bias_init_fn))
-
-            for i, o in zip(hiddens[0:-1], hiddens[1:]):
-                self.linear_layers.append(Linear(i, o, weight_init_fn, bias_init_fn))
+        # Write your code here.
+        layer_sizes = [input_size] + list(hiddens) + [output_size]
+        for in_dim, out_dim in zip(layer_sizes[:-1], layer_sizes[1:]):
             self.linear_layers.append(
-                Linear(hiddens[-1], output_size, weight_init_fn, bias_init_fn))
+                Linear(in_dim, out_dim, weight_init_fn, bias_init_fn)
+            )
 
         # If batch norm, add batch norm layers into the list 'self.bn_layers'
         self.bn_layers = []
-        if self.bn:
-            # if self.num_bn_layers < len(hiddens):
-            for i in range(self.num_bn_layers):
-                self.bn_layers.append(BatchNorm(hiddens[i]))
-            # else:
-            #     for i in range(len(hiddens)):
-            #         self.bn_layers.append(BatchNorm(hiddens[i]))
-            #     self.bn_layers.append(BatchNorm(output_size))
+        # Write your code here.
+        if self.num_bn_layers > 0:
+            assert self.num_bn_layers <= len(hiddens)
+            self.bn_layers = [BatchNorm(hiddens[i]) for i in range(self.num_bn_layers)]
 
         self.output = None
 
@@ -95,16 +98,11 @@ class MLP(object):
             out (np.array): (batch size, output_size)
         """
         # Complete the forward pass through your entire MLP.
-        # raise NotImplemented
-
-        layer_id = 0
-        while layer_id < self.num_bn_layers:
-            x = self.activations[layer_id](
-                self.bn_layers[layer_id](self.linear_layers[layer_id](x), eval=not self.train_mode))
-            layer_id += 1
-        while layer_id < self.nlayers:
-            x = self.activations[layer_id](self.linear_layers[layer_id](x))
-            layer_id += 1
+        for i, linear in enumerate(self.linear_layers):
+            x = linear.forward(x)
+            if i < self.num_bn_layers:
+                x = self.bn_layers[i](x, eval=not self.train_mode)
+            x = self.activations[i](x)
         self.output = x
         return self.output
 
@@ -112,50 +110,49 @@ class MLP(object):
         # Use numpyArray.fill(0.0) to zero out your backpropped derivatives in each
         # of your linear and batchnorm layers.
         for linear in self.linear_layers:
-            linear.db.fill(0.0)
             linear.dW.fill(0.0)
-
-        for bn in self.bn_layers:
-            bn.dbeta.fill(0.0)
-            bn.dgamma.fill(0.0)
+            linear.db.fill(0.0)
+        for bn_layer in self.bn_layers:
+            bn_layer.dgamma.fill(0.0)
+            bn_layer.dbeta.fill(0.0)
 
     def step(self):
         # Apply a step to the weights and biases of the linear layers.
         # Apply a step to the weights of the batchnorm layers.
         # (You will add momentum later in the assignment to the linear layers only
         # , not the batchnorm layers)
+        if self.momentum == 0.0:
+            for linear in self.linear_layers:
+                linear.W -= self.lr * linear.dW
+                linear.b -= self.lr * linear.db
+        else:
+            for linear in self.linear_layers:
+                linear.momentum_W = (
+                    self.momentum * linear.momentum_W - self.lr * linear.dW
+                )
+                linear.W += linear.momentum_W
+                linear.momentum_b = (
+                    self.momentum * linear.momentum_b - self.lr * linear.db
+                )
+                linear.b += linear.momentum_b
 
-        for linear in self.linear_layers:
-            linear.momentum_W = self.momentum * linear.momentum_W - self.lr * linear.dW
-            linear.W += linear.momentum_W
-
-            linear.momentum_b = self.momentum * linear.momentum_b - self.lr * linear.db
-            linear.b += linear.momentum_b
-
-        for bn in self.bn_layers:
-            bn.gamma -= bn.dgamma * self.lr
-            bn.beta -= bn.dbeta * self.lr
-
-        # raise NotImplemented
+        for bn_layer in self.bn_layers:
+            bn_layer.gamma -= self.lr * bn_layer.dgamma
+            bn_layer.beta -= self.lr * bn_layer.dbeta
 
     def backward(self, labels):
         # Backpropagate through the activation functions, batch norm and
         # linear layers.
         # Be aware of which return derivatives and which are pure backward passes
         # i.e. take in a loss w.r.t it's output.
-        # raise NotImplemented
-        loss = self.total_loss(labels)
-
+        loss = self.total_loss(labels=labels)
         gradient = self.criterion.derivative()
-
-        for layer in range(self.nlayers - 1, self.num_bn_layers - 1, -1):
-            gradient = gradient * self.activations[layer].derivative()
-            gradient = self.linear_layers[layer].backward(gradient)
-
-        for layer in range(self.num_bn_layers - 1, -1, -1):
-            gradient = gradient * self.activations[layer].derivative()
-            gradient = self.bn_layers[layer].backward(gradient)
-            gradient = self.linear_layers[layer].backward(gradient)
+        for i in reversed(range(len(self.linear_layers))):
+            gradient = gradient * self.activations[i].derivative()
+            if i < self.num_bn_layers:
+                gradient = self.bn_layers[i].backward(gradient)
+            gradient = self.linear_layers[i].backward(gradient)
+        return loss
 
     def error(self, labels):
         return (np.argmax(self.output, axis=1) != np.argmax(labels, axis=1)).sum()
@@ -180,7 +177,8 @@ def get_training_stats(mlp, dset, nepochs, batch_size):
     trainx, trainy = train
     valx, valy = val
 
-    idxs = np.arange(len(trainx))
+    n_train = len(trainx)
+    n_val = len(valx)
 
     training_losses = np.zeros(nepochs)
     training_errors = np.zeros(nepochs)
@@ -188,25 +186,52 @@ def get_training_stats(mlp, dset, nepochs, batch_size):
     validation_errors = np.zeros(nepochs)
 
     # Setup ...
-
     for e in range(nepochs):
+        idxs = np.arange(n_train)
+        np.random.shuffle(idxs)
 
+        mlp.train()
+        train_loss_sum = 0.0
+        train_error_sum = 0
         # Per epoch setup ...
-
         for b in range(0, len(trainx), batch_size):
-            pass  # Remove this line when you start implementing this
             # Train ...
+            batch_idxs = idxs[b : b + batch_size]
+            batch_x = trainx[batch_idxs]
+            batch_y = trainy[batch_idxs]
+            mlp.forward(batch_x)
+            mlp.zero_grads()
+            batch_loss = mlp.backward(batch_y)
+            mlp.step()
+            train_loss_sum += batch_loss
+            train_error_sum += mlp.error(batch_y)
 
-        for b in range(0, len(valx), batch_size):
-            pass  # Remove this line when you start implementing this
-            # Val ...
+        training_losses[e] = train_loss_sum / n_train
+        training_errors[e] = train_error_sum / n_train
 
-        # Accumulate data...
+        mlp.eval()
+        val_loss_sum = 0.0
+        val_error_sum = 0
+        for b in range(0, n_val, batch_size):
+            batch_x = valx[b : b + batch_size]
+            batch_y = valy[b : b + batch_size]
+            mlp.forward(batch_x)
+            val_loss_sum += mlp.total_loss(batch_y)
+            val_error_sum += mlp.error(batch_y)
+
+        validation_losses[e] = val_loss_sum / n_val
+        validation_errors[e] = val_error_sum / n_val
+
+        print(
+            f"Epoch {e + 1}: "
+            f"train_loss={training_losses[e]:.4f}, "
+            f"train_error={training_errors[e]:.4f}, "
+            f"val_loss={validation_losses[e]:.4f}, "
+            f"val_error={validation_errors[e]:.4f}"
+        )
 
     # Cleanup ...
 
     # Return results ...
 
-    # return (training_losses, training_errors, validation_losses, validation_errors)
-
-    raise NotImplemented
+    return (training_losses, training_errors, validation_losses, validation_errors)
