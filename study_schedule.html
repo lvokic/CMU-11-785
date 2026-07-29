@@ -257,12 +257,13 @@
         <h1>个人学习 Schedule</h1>
         <p>
             这是按照课程仓库整理的自学路线。你的当前进度按课程编号记录为
-            <strong>Recitation 0.1–0.5 已完成</strong>；下一项是 Recitation 0.6。
+            <strong>Recitation 0.1–0.6、Lecture 1–5、Lab 1 已完成</strong>；下一阶段是
+            Lecture 6–8、Recitation 0.7–0.13 和 Lab 2–4。
             课程原始日期仅作为参考，当前执行以内容顺序为准。
         </p>
         <div class="stats">
-            <div class="stat"><div class="stat-label">Recitations</div><div class="stat-value"><span id="done-count">5</span> / 28 完成</div></div>
-            <div class="stat"><div class="stat-label">当前任务</div><div class="stat-value">0.6 Tensordot</div></div>
+            <div class="stat"><div class="stat-label">Recitations</div><div class="stat-value"><span id="done-count">6</span> / 28 完成</div></div>
+            <div class="stat"><div class="stat-label">当前任务</div><div class="stat-value">Lecture 6 + Rec 0.7</div></div>
             <div class="stat"><div class="stat-label">Conda 环境</div><div class="stat-value">cmu-11785</div></div>
             <div class="stat"><div class="stat-label">核心主线</div><div class="stat-value">MLP → CNN → RNN → Transformer</div></div>
         </div>
@@ -270,13 +271,13 @@
 
     <section class="callout">
         <div>
-            <h2>现在开始：Recitation 0.6</h2>
+            <h2>现在开始：Lecture 6 + Recitation 0.7</h2>
             <p>
-                完成 Tensordot &amp; Einsum notebook，重点理解 axes、维度收缩和 Einstein notation，
-                并分别用 NumPy 与 PyTorch 验证结果。
+                Lecture 6 重点学习 convergence、loss surfaces 和 momentum；随后完成 Recitation 0.7，
+                巩固 Git / GitHub 工作流。之后进入 Lecture 7–8、Lab 2–4 和 HW1。
             </p>
         </div>
-        <a class="button" href="S26/documents/recitation_0/0.06/0_6_Tensordot_%26_Einsum.ipynb">打开 Notebook</a>
+        <a class="button" href="S26/documents/recitation_0/0.07/Git_Github_CheatSheet.ipynb">打开 Recitation 0.7</a>
     </section>
 
     <section>
@@ -285,27 +286,27 @@
         <div class="grid">
             <article class="card next">
                 <span class="number">1</span>
-                <h3>Recitation 0.6</h3>
-                <p>Tensordot &amp; Einsum；掌握张量维度收缩和爱因斯坦求和。</p>
-                <label class="check"><input class="task" data-key="r0.6" type="checkbox"> 完成</label>
+                <h3>Lecture 6</h3>
+                <p>理解 convergence、loss surfaces 和 momentum，连接训练曲线与优化行为。</p>
+                <label class="check"><input class="task" data-key="lec6" type="checkbox"> 完成</label>
             </article>
             <article class="card">
                 <span class="number">2</span>
-                <h3>Lecture 1–3</h3>
-                <p>Introduction、Universal Approximation、Learning 和 ERM。</p>
-                <label class="check"><input class="task" data-key="lec1-3" type="checkbox"> 完成</label>
+                <h3>Lecture 7–8</h3>
+                <p>学习 batch size、SGD、optimizers、regularizers、BatchNorm 和 Dropout。</p>
+                <label class="check"><input class="task" data-key="lec7-8" type="checkbox"> 完成</label>
             </article>
             <article class="card">
                 <span class="number">3</span>
-                <h3>Lecture 4–5</h3>
-                <p>Gradient Descent、Training、Backpropagation 和反向传播微积分。</p>
-                <label class="check" ><input class="task" data-key="lec4-5" type="checkbox"> 完成</label>
+                <h3>Recitation 0.7–0.13</h3>
+                <p>GitHub、Colab、云平台、Kaggle 和 PSC；可与 Lecture 6–8 并行。</p>
+                <label class="check"><input class="task" data-key="r0.7-0.13" type="checkbox"> 完成</label>
             </article>
             <article class="card">
                 <span class="number">4</span>
-                <h3>Lab 1</h3>
-                <p>Your First MLP；能解释 forward、loss、backward 和参数更新。</p>
-                <label class="check"><input class="task" data-key="lab1" type="checkbox"> 完成</label>
+                <h3>Lab 2–4</h3>
+                <p>Debugging、ablation / hyperparameter tuning，以及 derivatives 和 autograd。</p>
+                <label class="check"><input class="task" data-key="labs2-4" type="checkbox"> 完成</label>
             </article>
             <article class="card">
                 <span class="number">5</span>
@@ -315,9 +316,15 @@
             </article>
             <article class="card">
                 <span class="number">6</span>
-                <h3>资源与工程</h3>
-                <p>Recitation 0.7–0.13：GitHub、Colab、云平台、Kaggle、PSC。</p>
-                <label class="check"><input class="task" data-key="r0.7-0.13" type="checkbox"> 完成</label>
+                <h3>Recitation 0.14–0.16</h3>
+                <p>Datasets、Dataloaders 和 data preprocessing，准备 CNN 数据 pipeline。</p>
+                <label class="check"><input class="task" data-key="r0.14-0.16" type="checkbox"> 完成</label>
+            </article>
+            <article class="card">
+                <span class="number">7</span>
+                <h3>下一阶段预览</h3>
+                <p>Lecture 9–12 与 Lab 5–6：进入 CNN 基础、反向传播和分类验证。</p>
+                <label class="check"><input class="task" data-key="cnn-stage" type="checkbox"> 完成</label>
             </article>
         </div>
         <div class="progress-wrap">
@@ -328,7 +335,7 @@
 
     <section>
         <h2>Recitation 总路线</h2>
-        <p class="section-lead">0.1–0.5 已完成；0.6 是当前下一步。0.7–0.13 是资源类内容，可以和课程主线并行。</p>
+        <p class="section-lead">0.1–0.6 已完成；0.7–0.13 是当前资源与工程阶段，可以和 Lecture 6–8 并行。</p>
         <div class="table-scroll">
             <table>
                 <thead><tr><th>完成</th><th>编号</th><th>主题</th><th>模块</th><th>状态</th><th>材料</th></tr></thead>
@@ -338,8 +345,8 @@
                     <tr data-row-key="r0.3"><td><input class="task" data-key="r0.3" type="checkbox" checked></td><td>0.3</td><td>NumPy Fundamentals</td><td>Python Programming + PyTorch</td><td><span class="badge done">已完成</span></td><td><a href="S26/documents/recitation_0/0.03/Rec_0_3_NumPy_Fundamentals_S26.ipynb">Notebook</a></td></tr>
                     <tr data-row-key="r0.4"><td><input class="task" data-key="r0.4" type="checkbox" checked></td><td>0.4</td><td>PyTorch</td><td>Python Programming + PyTorch</td><td><span class="badge done">已完成</span></td><td><a href="S26/documents/recitation_0/0.04/Recitation_0_4_PyTorch.ipynb">Notebook</a></td></tr>
                     <tr data-row-key="r0.5"><td><input class="task" data-key="r0.5" type="checkbox" checked></td><td>0.5</td><td>Notebooks and Conda Environments</td><td>Python Programming + PyTorch</td><td><span class="badge done">已完成</span></td><td><a href="S26/documents/recitation_0/0.05/notebook_example.ipynb">Notebook</a></td></tr>
-                    <tr data-row-key="r0.6"><td><input class="task" data-key="r0.6" type="checkbox"></td><td>0.6</td><td>Tensordot &amp; Einsum</td><td>Python Programming + PyTorch</td><td><span class="badge next">下一项</span></td><td><a href="S26/documents/recitation_0/0.06/0_6_Tensordot_%26_Einsum.ipynb">Notebook</a></td></tr>
-                    <tr data-row-key="r0.7"><td><input class="task" data-key="r0.7" type="checkbox"></td><td>0.7</td><td>GitHub</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.07/Git_Github_CheatSheet.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.6" class="is-done"><td><input class="task" data-key="r0.6" type="checkbox" checked></td><td>0.6</td><td>Tensordot &amp; Einsum</td><td>Python Programming + PyTorch</td><td><span class="badge done">已完成</span></td><td><a href="S26/documents/recitation_0/0.06/0_6_Tensordot_%26_Einsum.ipynb">Notebook</a></td></tr>
+                    <tr data-row-key="r0.7"><td><input class="task" data-key="r0.7" type="checkbox"></td><td>0.7</td><td>GitHub</td><td>Computational Resources</td><td><span class="badge next">下一项</span></td><td><a href="S26/documents/recitation_0/0.07/Git_Github_CheatSheet.ipynb">Notebook</a></td></tr>
                     <tr data-row-key="r0.8"><td><input class="task" data-key="r0.8" type="checkbox"></td><td>0.8</td><td>Google Colab</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.08/Google_colab_recitation_0_8.ipynb">Notebook</a></td></tr>
                     <tr data-row-key="r0.9"><td><input class="task" data-key="r0.9" type="checkbox"></td><td>0.9</td><td>Google Cloud Platform</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td><a href="S26/documents/recitation_0/0.09/0_9_Google_Cloud_Platform_VM_Setup.ipynb">Notebook</a></td></tr>
                     <tr data-row-key="r0.10"><td><input class="task" data-key="r0.10" type="checkbox"></td><td>0.10</td><td>Amazon Web Services</td><td>Computational Resources</td><td><span class="badge plan">计划</span></td><td class="muted">视频 / 课程页面</td></tr>
@@ -373,8 +380,8 @@
             <table>
                 <thead><tr><th>课程阶段</th><th>Lectures</th><th>主题</th><th>配套 Lab / 目标</th></tr></thead>
                 <tbody>
-                    <tr><td>基础与训练</td><td>1–5</td><td>Introduction、Universal Approximation、ERM、Gradient Descent、Backpropagation</td><td>Lab 1：Your First MLP；开始 HW1</td></tr>
-                    <tr><td>优化与正则化</td><td>6–8</td><td>Loss Surfaces、Momentum、SGD / Mini-batch、Optimizers、Regularizers、BatchNorm、Dropout</td><td>Lab 2–4：Debugging、Ablations / Tuning、Autograd</td></tr>
+                    <tr><td>基础与训练</td><td>1–5 <span class="badge done">已完成</span></td><td>Introduction、Universal Approximation、ERM、Gradient Descent、Backpropagation</td><td>Lab 1：Your First MLP <span class="badge done">已完成</span>；HW1 待完成</td></tr>
+                    <tr><td>优化与正则化</td><td>6–8 <span class="badge next">当前阶段</span></td><td>Loss Surfaces、Momentum、SGD / Mini-batch、Optimizers、Regularizers、BatchNorm、Dropout</td><td>Lab 2–4：Debugging、Ablations / Tuning、Autograd</td></tr>
                     <tr><td>CNN</td><td>9–12</td><td>Convolutional Neural Networks I–IV</td><td>Lab 5–6：CNN Basics and Backprop、Classification and Verification；HW2 主线</td></tr>
                     <tr><td>序列模型</td><td>13–16</td><td>RNN、Seq2Seq、CTC、Blanks、Beam Search</td><td>Lab 7–9：RNN、Kaggle / Pre-trained Models、CTC / Beam Search；HW3 主线</td></tr>
                     <tr><td>语言模型与 Transformer</td><td>17–20</td><td>Language Models、Translation、Attention、Transformers、LLMs</td><td>Lab 10–11：Attention / MT / LAS、Transformers；HW4 主线</td></tr>
@@ -391,10 +398,10 @@
             <table>
                 <thead><tr><th>阶段</th><th>先学什么</th><th>完成标准</th><th>建议产出</th></tr></thead>
                 <tbody>
-                    <tr><td>Stage 0<br><span class="small">已完成 0.1–0.5</span></td><td>Python、OOP、NumPy、PyTorch、Conda / Notebook</td><td>能在 `cmu-11785` 中运行 NumPy、PyTorch、Matplotlib 和 Jupyter</td><td>环境检查 cell；基础数组 / Tensor 练习</td></tr>
-                    <tr><td>Stage 1<br><span class="small">当前</span></td><td>0.6 + Lecture 1–5 + Lab 1</td><td>能解释 einsum、forward、loss、gradient、backprop 和 optimizer</td><td>完成 0.6 notebook；训练一个最小 MLP</td></tr>
-                    <tr><td>Stage 2</td><td>0.7–0.13 + Lecture 6–8 + Lab 2–4</td><td>能复现实验、调参、定位训练问题，并理解 autograd</td><td>实验记录；HW1 可运行版本</td></tr>
-                    <tr><td>Stage 3</td><td>0.14–0.16 + Lecture 9–12 + Lab 5–6</td><td>能使用 Dataset / DataLoader 完成 CNN 训练与验证</td><td>HW2；训练曲线与错误分析</td></tr>
+                    <tr><td>Stage 0<br><span class="small">已完成 0.1–0.6</span></td><td>Python、OOP、NumPy、PyTorch、Conda / Notebook、Tensordot / Einsum</td><td>能在 `cmu-11785` 中运行 NumPy、PyTorch、Matplotlib 和 Jupyter，并处理基础 Tensor 运算</td><td>环境检查 cell；数组 / Tensor 练习</td></tr>
+                    <tr><td>Stage 1<br><span class="small">已完成</span></td><td>Lecture 1–5 + Lab 1</td><td>能解释 forward、loss、gradient、backprop、optimizer 和基础 MLP 训练</td><td>完成 Lab 1；记录不同 MLP 架构和 optimizer 实验</td></tr>
+                    <tr><td>Stage 2<br><span class="small">当前</span></td><td>0.7–0.13 + Lecture 6–8 + Lab 2–4</td><td>能理解优化、正则化、BatchNorm、Dropout，复现实验并定位训练问题</td><td>完成 Rec 0.7–0.13；实验记录；HW1 可运行版本</td></tr>
+                    <tr><td>Stage 3<br><span class="small">下一阶段</span></td><td>0.14–0.16 + Lecture 9–12 + Lab 5–6</td><td>能使用 Dataset / DataLoader 完成 CNN 训练与验证</td><td>HW2；训练曲线与错误分析</td></tr>
                     <tr><td>Stage 4</td><td>0.17–0.19 + Lecture 13–16 + Lab 7–9</td><td>能处理变长序列、CTC、beam search，并使用 WandB 调试</td><td>HW3；模型和数据 pipeline 说明</td></tr>
                     <tr><td>Stage 5</td><td>0.20–0.25 + Lecture 17–24 + Lab 10–14</td><td>能理解 loss 选择、Transformer、VAE、Diffusion、GAN 的基本训练逻辑</td><td>HW4；至少复现一个生成 / 序列模型实验</td></tr>
                     <tr><td>Stage 6</td><td>0.26–0.28 + Lecture 25–28 + Lab 15</td><td>能组织完整项目：数据、模型、训练、保存、评估和报告</td><td>Project；最终复习笔记</td></tr>
@@ -493,7 +500,7 @@
 
 <script>
     (() => {
-        const storageKey = "cmu-11785-study-schedule-v1";
+        const storageKey = "cmu-11785-study-schedule-v2";
         const boxes = [...document.querySelectorAll(".task")];
         let saved = {};
         try { saved = JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch (_) {}
@@ -517,7 +524,12 @@
         });
 
         const updateProgress = () => {
-            const recitations = [...new Set(boxes.map(box => box.dataset.key).filter(key => key.startsWith("r0.")))];
+            const recitations = [...new Set(
+                boxes
+                    .filter(box => box.closest("[data-row-key]"))
+                    .map(box => box.dataset.key)
+                    .filter(key => key.startsWith("r0."))
+            )];
             const done = recitations.filter(key => boxes.some(box => box.dataset.key === key && box.checked)).length;
             document.getElementById("done-count").textContent = done;
             document.getElementById("progress-fill").style.width = `${(done / recitations.length) * 100}%`;
