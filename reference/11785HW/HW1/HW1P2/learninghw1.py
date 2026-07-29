@@ -14,8 +14,9 @@ from torch.utils.data import Dataset
 
 from utils.base import Learning, Params
 
-
-NUM_WORKERS = 0
+# DataLoader workers prepare batches in parallel with GPU computation.
+# Start with a small number because the dataset is large and preloaded.
+NUM_WORKERS = 4
 N_FEATURES = 40
 
 
@@ -62,18 +63,46 @@ class DatasetHW1(Dataset):
         self.data_type = data_type
         self.test = Y_dir is None
 
-        # TODO: implement data loading and padding.
-        self.X = np.load(X_dir, allow_pickle=True)
+        # Pad each utterance independently so a context window cannot cross
+        # an utterance boundary.
+        raw_X = np.load(X_dir, allow_pickle=True)
+        self.X = [
+            np.pad(
+                utterance,
+                ((self.K, self.K), (0, 0)),
+                mode="constant",
+                constant_values=0,
+            )
+            for utterance in raw_X
+        ]
         self.Y = None if self.test else np.load(Y_dir, allow_pickle=True)
         self.lookup = []
 
-        raise NotImplementedError("Implement DatasetHW1 preprocessing")
+        # Keep original frame indices.  The corresponding center in the
+        # padded utterance is frame_id + self.K.
+        for utterance_id, utterance in enumerate(self.X):
+            original_length = utterance.shape[0] - 2 * self.K
+            self.lookup.extend(
+                (utterance_id, frame_id)
+                for frame_id in range(original_length)
+            )
 
     def __len__(self):
         return len(self.lookup)
 
     def __getitem__(self, index):
-        raise NotImplementedError("Implement DatasetHW1.__getitem__")
+        utterance_id, frame_id = self.lookup[index]
+        center = frame_id + self.K
+        utterance = self.X[utterance_id]
+
+        context = utterance[center - self.K : center + self.K + 1]
+        features = torch.tensor(context.reshape(-1), dtype=self.data_type)
+
+        if self.test:
+            return features
+
+        label = torch.tensor(self.Y[utterance_id][frame_id], dtype=torch.long)
+        return features, label
 
 
 class LearningHW1(Learning):
@@ -90,13 +119,82 @@ class LearningHW1(Learning):
         self.dtype = torch.double if params.is_double else torch.float
 
     def _load_train(self):
-        raise NotImplementedError("Create the training Dataset and DataLoader")
+        train_dataset = DatasetHW1(
+            X_dir=self.train_X,
+            Y_dir=self.train_Y,
+            context_K=self.params.K,
+            data_type=self.dtype,
+        )
+        self.train_loader = torch.utils.data.DataLoader(
+            train_dataset,
+            batch_size=self.params.B,
+            shuffle=True,
+            num_workers=NUM_WORKERS,
+            pin_memory=True,
+        )
 
     def _load_valid(self):
-        raise NotImplementedError("Create the validation Dataset and DataLoader")
+        validation_dataset = DatasetHW1(
+            X_dir=self.valid_X,
+            Y_dir=self.valid_Y,
+            context_K=self.params.K,
+            data_type=self.dtype,
+        )
+        self.valid_loader = torch.utils.data.DataLoader(
+            validation_dataset,
+            batch_size=self.params.B,
+            shuffle=False,
+            num_workers=NUM_WORKERS,
+            pin_memory=True,
+        )
 
     def _load_test(self):
-        raise NotImplementedError("Create the test Dataset and DataLoader")
+        test_dataset = DatasetHW1(
+            X_dir=self.test_X,
+            Y_dir=None,
+            context_K=self.params.K,
+            data_type=self.dtype,
+        )
+        self.test_loader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=self.params.B,
+            shuffle=False,
+            num_workers=NUM_WORKERS,
+            pin_memory=True,
+        )
 
     def test(self):
-        raise NotImplementedError("Write predictions in the Kaggle CSV format")
+        if self.test_loader is None:
+            self._load_test()
+
+        predictions = []
+        with torch.cuda.device(self.device):
+            with torch.no_grad():
+                self.model.eval()
+                for batch in self.test_loader:
+                    # DatasetHW1 returns only x for the test set.  This also
+                    # handles a tuple in case the dataset implementation changes.
+                    features = batch[0] if isinstance(batch, (tuple, list)) else batch
+                    logits = self.model(
+                        features.to(self.device, non_blocking=True)
+                    )
+                    predictions.append(torch.argmax(logits, dim=1).cpu())
+
+            predictions = torch.cat(predictions).numpy().astype(np.int64)
+            ids = np.arange(predictions.shape[0], dtype=np.int64)
+            submission = np.column_stack((ids, predictions))
+
+            output_path = os.path.join(
+                os.path.dirname(os.path.abspath(self.params.data_dir)),
+                "submission.csv",
+            )
+        np.savetxt(
+            output_path,
+            submission,
+            delimiter=",",
+            header="id,label",
+            comments="",
+            fmt="%d",
+        )
+        print(f"Saved {len(predictions)} predictions to {output_path}")
+        return output_path

@@ -33,17 +33,19 @@ class Params(ABC):
 
     @abstractmethod
     def __str__(self):
-        return ''
+        return ""
 
 
 class Learning(ABC):
-    def __init__(self, params, model: Model, optimizer_handle, criterion_handle, draw_graph=False):
+    def __init__(
+        self, params, model: Model, optimizer_handle, criterion_handle, draw_graph=False
+    ):
 
         self.params = params
         self.device = params.device
         self.str = str(params) + model.__class__.__name__
 
-        self.writer = SummaryWriter('runs/' + str(self))
+        self.writer = SummaryWriter("runs/" + str(self))
 
         self.train_loader = None
         self.valid_loader = None
@@ -54,8 +56,9 @@ class Learning(ABC):
             self.model.double()
 
         if draw_graph:
-            self.writer.add_graph(model,
-                                  torch.rand([params.B] + model.input_dims, device=self.device))
+            self.writer.add_graph(
+                model, torch.rand([params.B] + model.input_dims, device=self.device)
+            )
 
         self.optimizer = optimizer_handle(self.model.parameters(), lr=self.params.lr)
         self.criterion = criterion_handle().cuda(self.device)
@@ -82,32 +85,35 @@ class Learning(ABC):
         pass
 
     def load_model(self, epoch=20):
-        loaded = torch.load('checkpoints/' + str(self) + 'e=' + str(epoch) + '.tar')
-        self.init_epoch = loaded['epoch']
-        self.model.load_state_dict(loaded['model_state_dict'])
-        self.optimizer.load_state_dict(loaded['optimizer_state_dict'])
+        loaded = torch.load("checkpoints/" + str(self) + "e=" + str(epoch) + ".tar")
+        self.init_epoch = loaded["epoch"]
+        self.model.load_state_dict(loaded["model_state_dict"])
+        self.optimizer.load_state_dict(loaded["optimizer_state_dict"])
 
     def save_model(self, epoch, loss_item):
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-            'loss': loss_item,
-        }, 'checkpoints/' + str(self) + 'e=' + str(epoch) + '.tar')
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+                "loss": loss_item,
+            },
+            "checkpoints/" + str(self) + "e=" + str(epoch) + ".tar",
+        )
 
     def train(self):
         if self.train_loader is None:
             self._load_train()
 
-        print('Training...')
+        print("Training...")
         with torch.cuda.device(self.device):
             self.model.train()
             for epoch in range(self.init_epoch + 1, self.params.max_epoch):
                 total_loss = torch.zeros(1, device=self.device)
                 total_acc = torch.zeros(1, device=self.device)
                 for i, batch in enumerate(tqdm(self.train_loader)):
-                    bx = batch[0].to(self.device)
-                    by = batch[1].to(self.device)
+                    bx = batch[0].to(self.device, non_blocking=True)
+                    by = batch[1].to(self.device, non_blocking=True)
 
                     prediction = self.model(bx)
                     loss = self.criterion(prediction, by)
@@ -120,10 +126,16 @@ class Learning(ABC):
                     self.optimizer.step()
                 loss_item = total_loss.item() / (i + 1)
                 accuracy_item = total_acc.item() / (i + 1) / self.params.B
-                self.writer.add_scalar('Loss/Train', loss_item, epoch)
-                self.writer.add_scalar('Accuracy/Train', accuracy_item, epoch)
-                print('epoch: ', epoch, 'Training Loss: ', "%.5f" % loss_item,
-                      'Accuracy: ', "%.5f" % accuracy_item)
+                self.writer.add_scalar("Loss/Train", loss_item, epoch)
+                self.writer.add_scalar("Accuracy/Train", accuracy_item, epoch)
+                print(
+                    "epoch: ",
+                    epoch,
+                    "Training Loss: ",
+                    "%.5f" % loss_item,
+                    "Accuracy: ",
+                    "%.5f" % accuracy_item,
+                )
 
                 self._validate(epoch)
                 self.model.train()
@@ -135,15 +147,15 @@ class Learning(ABC):
         if self.valid_loader is None:
             self._load_valid()
 
-        # print('Validating...')
+        print("Validating...")
         with torch.cuda.device(self.device):
             with torch.no_grad():
                 self.model.eval()
                 total_loss = torch.zeros(1, device=self.device)
                 total_acc = torch.zeros(1, device=self.device)
                 for i, batch in enumerate(self.valid_loader):
-                    bx = batch[0].to(self.device)
-                    by = batch[1].to(self.device)
+                    bx = batch[0].to(self.device, non_blocking=True)
+                    by = batch[1].to(self.device, non_blocking=True)
 
                     prediction = self.model(bx)
                     loss = self.criterion(prediction, by)
@@ -153,10 +165,16 @@ class Learning(ABC):
 
                 loss_item = total_loss.item() / (i + 1)
                 accuracy_item = total_acc.item() / (i + 1) / self.params.B
-                self.writer.add_scalar('Loss/Validation', loss_item, epoch)
-                self.writer.add_scalar('Accuracy/Validation', accuracy_item, epoch)
-                print('epoch: ', epoch, 'Validation Loss: ', "%.5f" % loss_item,
-                      'Accuracy: ', "%.5f" % accuracy_item)
+                self.writer.add_scalar("Loss/Validation", loss_item, epoch)
+                self.writer.add_scalar("Accuracy/Validation", accuracy_item, epoch)
+                print(
+                    "epoch: ",
+                    epoch,
+                    "Validation Loss: ",
+                    "%.5f" % loss_item,
+                    "Accuracy: ",
+                    "%.5f" % accuracy_item,
+                )
 
     @abstractmethod
     def test(self):

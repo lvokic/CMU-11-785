@@ -8,7 +8,6 @@ import torch.nn as nn
 
 from utils.base import Model
 
-
 N_FEATURES = 40
 N_CLASSES = 71
 
@@ -34,7 +33,25 @@ class MLP(Model):
         #     nn.ReLU(),
         #     nn.Linear(512, N_CLASSES),
         # )
-        self.network = None
+        self.network = nn.Sequential(
+            nn.Linear(self.input_size, 1024),
+            nn.BatchNorm1d(1024),
+            nn.ReLU(),
+            nn.Dropout(p=self.dropout),
+            nn.Linear(1024, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Dropout(p=self.dropout),
+            nn.Linear(512, 256),
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+            nn.Dropout(p=self.dropout),
+            nn.Linear(256, 128),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Dropout(p=self.dropout),
+            nn.Linear(128, N_CLASSES)
+        )
 
     @property
     def input_dims(self):
