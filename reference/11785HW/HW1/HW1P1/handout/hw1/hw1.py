@@ -64,26 +64,11 @@ class MLP(object):
         # (HINT: self.foo = [ bar(???) for ?? in ? ])
         # (HINT: Can you use zip here?)
         self.linear_layers = []
-        if len(hiddens) == 0:
-            self.linear_layers.append(Linear(input_size, output_size, weight_init_fn, bias_init_fn))
-        else:
-            self.linear_layers.append(Linear(input_size, hiddens[0], weight_init_fn, bias_init_fn))
-
-            for i, o in zip(hiddens[0:-1], hiddens[1:]):
-                self.linear_layers.append(Linear(i, o, weight_init_fn, bias_init_fn))
-            self.linear_layers.append(
-                Linear(hiddens[-1], output_size, weight_init_fn, bias_init_fn))
+        # Write your code here.
 
         # If batch norm, add batch norm layers into the list 'self.bn_layers'
         self.bn_layers = []
-        if self.bn:
-            # if self.num_bn_layers < len(hiddens):
-            for i in range(self.num_bn_layers):
-                self.bn_layers.append(BatchNorm(hiddens[i]))
-            # else:
-            #     for i in range(len(hiddens)):
-            #         self.bn_layers.append(BatchNorm(hiddens[i]))
-            #     self.bn_layers.append(BatchNorm(output_size))
+        # Write your code here.
 
         self.output = None
 
@@ -95,29 +80,12 @@ class MLP(object):
             out (np.array): (batch size, output_size)
         """
         # Complete the forward pass through your entire MLP.
-        # raise NotImplemented
-
-        layer_id = 0
-        while layer_id < self.num_bn_layers:
-            x = self.activations[layer_id](
-                self.bn_layers[layer_id](self.linear_layers[layer_id](x), eval=not self.train_mode))
-            layer_id += 1
-        while layer_id < self.nlayers:
-            x = self.activations[layer_id](self.linear_layers[layer_id](x))
-            layer_id += 1
-        self.output = x
-        return self.output
+        raise NotImplemented
 
     def zero_grads(self):
         # Use numpyArray.fill(0.0) to zero out your backpropped derivatives in each
         # of your linear and batchnorm layers.
-        for linear in self.linear_layers:
-            linear.db.fill(0.0)
-            linear.dW.fill(0.0)
-
-        for bn in self.bn_layers:
-            bn.dbeta.fill(0.0)
-            bn.dgamma.fill(0.0)
+        raise NotImplemented
 
     def step(self):
         # Apply a step to the weights and biases of the linear layers.
@@ -125,37 +93,14 @@ class MLP(object):
         # (You will add momentum later in the assignment to the linear layers only
         # , not the batchnorm layers)
 
-        for linear in self.linear_layers:
-            linear.momentum_W = self.momentum * linear.momentum_W - self.lr * linear.dW
-            linear.W += linear.momentum_W
-
-            linear.momentum_b = self.momentum * linear.momentum_b - self.lr * linear.db
-            linear.b += linear.momentum_b
-
-        for bn in self.bn_layers:
-            bn.gamma -= bn.dgamma * self.lr
-            bn.beta -= bn.dbeta * self.lr
-
-        # raise NotImplemented
+        raise NotImplemented
 
     def backward(self, labels):
         # Backpropagate through the activation functions, batch norm and
         # linear layers.
         # Be aware of which return derivatives and which are pure backward passes
         # i.e. take in a loss w.r.t it's output.
-        # raise NotImplemented
-        loss = self.total_loss(labels)
-
-        gradient = self.criterion.derivative()
-
-        for layer in range(self.nlayers - 1, self.num_bn_layers - 1, -1):
-            gradient = gradient * self.activations[layer].derivative()
-            gradient = self.linear_layers[layer].backward(gradient)
-
-        for layer in range(self.num_bn_layers - 1, -1, -1):
-            gradient = gradient * self.activations[layer].derivative()
-            gradient = self.bn_layers[layer].backward(gradient)
-            gradient = self.linear_layers[layer].backward(gradient)
+        raise NotImplemented
 
     def error(self, labels):
         return (np.argmax(self.output, axis=1) != np.argmax(labels, axis=1)).sum()

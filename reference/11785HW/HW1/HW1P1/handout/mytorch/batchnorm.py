@@ -46,22 +46,7 @@ class BatchNorm(object):
         So see what values you need to recompute when eval is True.
         """
 
-        if eval:
-            norm = (x - self.running_mean) / np.sqrt(self.running_var + self.eps)  # ???
-            return self.gamma * norm + self.beta  # ???
-
-        self.x = x
-
-        self.mean = np.mean(x, axis=0, keepdims=True)
-        self.var = np.sum((x - self.mean) ** 2, axis=0, keepdims=True) / x.shape[0]
-        self.norm = (x - self.mean) / np.sqrt(self.var + self.eps)  # ???
-        self.out = self.gamma * self.norm + self.beta  # ???
-
-        # Update running batch statistics
-        self.running_mean = self.alpha * self.running_mean + (1 - self.alpha) * self.mean
-        self.running_var = self.alpha * self.running_var + (1 - self.alpha) * self.var
-
-        return self.out
+        raise NotImplemented
 
     def backward(self, delta):
         """
@@ -71,21 +56,7 @@ class BatchNorm(object):
             out (np.array): (batch size, in feature)
         """
 
-        dnorm = delta * self.gamma
-
-        self.dbeta = np.sum(delta, axis=0, keepdims=True)
-        self.dgamma = np.sum(delta * self.norm, axis=0, keepdims=True)
-
-        dvar = -0.5 * np.sum(dnorm * (self.x - self.mean) * np.power(self.var + self.eps, -1.5),
-                             axis=0, keepdims=True)
-
-        dmean = -np.sum(dnorm * np.power(self.var + self.eps, -0.5), axis=0, keepdims=True) - 2 / \
-                self.x.shape[0] * dvar * np.sum(self.x - self.mean, axis=0, keepdims=True)
-
-        out = dnorm * np.power(self.var + self.eps, -0.5) + dvar * 2 / self.x.shape[0] * (
-                self.x - self.mean) + dmean / self.x.shape[0]
-
-        return out
+        raise NotImplemented
 
 
 if __name__ == '__main__':

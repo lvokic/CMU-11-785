@@ -40,8 +40,7 @@ class Linear():
         Return:
             out (np.array): (batch size, out feature)
         """
-        self.X = x
-        return x @ self.W + self.b
+        raise NotImplemented
 
     def backward(self, delta: np.ndarray):
         """
@@ -50,29 +49,7 @@ class Linear():
         Return:
             out (np.array): (batch size, in feature)
         """
-        # raise NotImplemented
-        # y_bo = \sum_i^IN (x_bi*w_io) + b_o
-        # dy_bo/dW_io = x_bi
-        # dL/dy_bo = delta_bo
-        # dL/dW_io = x_bi*delta_bo via b in batch
-        # average on batch, because in parallel.
-        B = self.X.shape[0]
-        I = self.X.shape[1]
-        O = delta.shape[1]
-        self.dW = np.mean(self.X.reshape((B, I, 1)) * delta.reshape((B, 1, O)), axis=0)
-
-        # dy_bo/db_o = 1
-        # dL/db_o = delta_bo via b in batch -> mean
-
-        self.db = np.mean(delta, axis=0).reshape(1, -1)
-
-        # dy_bo/dx_bi = w_io
-        # where is x_bi used? in y_bO for all O, so we should sum over O to account for all pDs
-
-        dX = delta.reshape((B, 1, O)) * self.W.reshape((1, I, O))
-        dX = np.sum(dX, axis=2)
-
-        return dX
+        raise NotImplemented
 
 
 if __name__ == '__main__':
