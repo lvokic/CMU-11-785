@@ -5,3 +5,4 @@ tools/f26_discord_bot/.env
 tools/f26_discord_bot/.venv/
 tools/f26_discord_bot/__pycache__/
 tools/f26_discord_bot/*.log
+*.npy
