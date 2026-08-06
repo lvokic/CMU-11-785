@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn as nn
 import torch.utils.data
@@ -152,6 +154,7 @@ class Learning(ABC):
                 self.criterion.load_state_dict(loaded['loss_state_dict'], strict=False)
 
     def save_model(self, epoch):
+        os.makedirs('checkpoints', exist_ok=True)
         torch.save({
             'epoch': epoch,
             'model_state_dict': self.model.state_dict(),
@@ -166,7 +169,8 @@ class Learning(ABC):
         print('Training...')
         with torch.cuda.device(self.device):
             self.model.train()
-            for epoch in range(self.init_epoch + 1, self.params.max_epoch):
+            # max_epoch is inclusive: --epochs 20 runs epochs 1 through 20.
+            for epoch in range(self.init_epoch + 1, self.params.max_epoch + 1):
                 total_loss = torch.zeros(1, device=self.device)
                 total_acc = torch.zeros(1, device=self.device)
                 for i, batch in enumerate(tqdm(self.train_loader)):
@@ -193,7 +197,9 @@ class Learning(ABC):
                 self._validate(epoch)
                 self.model.train()
 
-                if epoch % checkpoint_interval == 0:
+                # Always keep the final model, even when max_epoch is not a
+                # multiple of checkpoint_interval.
+                if epoch % checkpoint_interval == 0 or epoch == self.params.max_epoch:
                     self.save_model(epoch)
 
     def _validate(self, epoch):
