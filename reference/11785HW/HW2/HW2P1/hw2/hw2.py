@@ -5,14 +5,14 @@ import numpy as np
 import os
 import sys
 
-sys.path.append('mytorch')
+sys.path.append("mytorch")
 from loss import *
 from activation import *
 from linear import *
 from conv import *
 
-class CNN(object):
 
+class CNN(object):
     """
     A simple convolutional neural network
 
@@ -21,9 +21,21 @@ class CNN(object):
     The returned model architecture should be same as in Section 3.3 Figure 3
     """
 
-    def __init__(self, input_width, num_input_channels, num_channels, kernel_sizes, strides,
-                 num_linear_neurons, activations, conv_weight_init_fn, bias_init_fn,
-                 linear_weight_init_fn, criterion, lr):
+    def __init__(
+        self,
+        input_width,
+        num_input_channels,
+        num_channels,
+        kernel_sizes,
+        strides,
+        num_linear_neurons,
+        activations,
+        conv_weight_init_fn,
+        bias_init_fn,
+        linear_weight_init_fn,
+        criterion,
+        lr,
+    ):
         """
         input_width           : int    : The width of the input to the first convolutional layer
         num_input_channels    : int    : Number of channels for the input layer
@@ -54,6 +66,9 @@ class CNN(object):
         # Don't change the name of the following class attributes,
         # the autograder will check against these attributes. But you will need to change
         # the values in order to initialize them correctly
+        assert (
+            len(activations) == len(num_channels) == len(kernel_sizes) == len(strides)
+        )
 
         ## Your code goes here -->
         # self.convolutional_layers (list Conv1D) = []
@@ -61,10 +76,35 @@ class CNN(object):
         # self.linear_layer         (Linear)      = Linear(???)
         # <---------------------
 
-        self.convolutional_layers = None
-        self.flatten = None
-        self.linear_layer = None
+        self.convolutional_layers = []
+        current_width = input_width
+        current_in_channel = num_input_channels
 
+        for i in range(self.nlayers):
+            kernel_size = kernel_sizes[i]
+            output_channel = num_channels[i]
+            stride = strides[i]
+            conv = Conv1D(
+                in_channel=current_in_channel,
+                out_channel=output_channel,
+                kernel_size=kernel_size,
+                stride=stride,
+                weight_init_fn=conv_weight_init_fn,
+                bias_init_fn=bias_init_fn,
+            )
+            self.convolutional_layers.append(conv)
+            current_width = (current_width - kernel_sizes[i]) // strides[i] + 1
+            current_in_channel = num_channels[i]
+
+        self.flatten = Flatten()
+        linear_input_size = current_in_channel * current_width
+
+        self.linear_layer = Linear(
+            in_feature=linear_input_size,
+            out_feature=num_linear_neurons,
+            weight_init_fn=linear_weight_init_fn,
+            bias_init_fn=bias_init_fn,
+        )
 
     def forward(self, x):
         """
@@ -77,6 +117,13 @@ class CNN(object):
         ## Your code goes here -->
         # Iterate through each layer
         # <---------------------
+        for i in range(self.nlayers):
+            conv = self.convolutional_layers[i]
+            activation = self.activations[i]
+            x = conv(x)
+            x = activation(x)
+        x = self.flatten(x)
+        x = self.linear_layer(x)
 
         # Save output (necessary for error and loss)
         self.output = x
@@ -98,9 +145,14 @@ class CNN(object):
         ## Your code goes here -->
         # Iterate through each layer in reverse order
         # <---------------------
-
+        grad = self.linear_layer.backward(grad)
+        grad = self.flatten.backward(grad)
+        for i in reversed(range(self.nlayers)):
+            activation = self.activations[i]
+            conv = self.convolutional_layers[i]
+            grad = grad * activation.derivative()
+            grad = conv.backward(grad)
         return grad
-
 
     def zero_grads(self):
         # Do not modify this method
@@ -114,14 +166,17 @@ class CNN(object):
     def step(self):
         # Do not modify this method
         for i in range(self.nlayers):
-            self.convolutional_layers[i].W = (self.convolutional_layers[i].W -
-                                              self.lr * self.convolutional_layers[i].dW)
-            self.convolutional_layers[i].b = (self.convolutional_layers[i].b -
-                                  self.lr * self.convolutional_layers[i].db)
+            self.convolutional_layers[i].W = (
+                self.convolutional_layers[i].W
+                - self.lr * self.convolutional_layers[i].dW
+            )
+            self.convolutional_layers[i].b = (
+                self.convolutional_layers[i].b
+                - self.lr * self.convolutional_layers[i].db
+            )
 
-        self.linear_layer.W = (self.linear_layer.W - self.lr * self.linear_layers.dW)
-        self.linear_layers.b = (self.linear_layers.b -  self.lr * self.linear_layers.db)
-
+        self.linear_layer.W = self.linear_layer.W - self.lr * self.linear_layer.dW
+        self.linear_layer.b = self.linear_layer.b - self.lr * self.linear_layer.db
 
     def __call__(self, x):
         # Do not modify this method
