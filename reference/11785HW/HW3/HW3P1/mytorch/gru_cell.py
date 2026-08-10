@@ -90,6 +90,12 @@ class GRUCell(object):
         # Add your code here.
         # Define your variables based on the writeup using the corresponding
         # names below.
+        self.r = self.r_act(self.Wrx @ self.x + self.bir + self.Wrh @ h + self.bhr)
+        self.z = self.z_act(self.Wzx @ self.x + self.biz + self.Wzh @ h + self.bhz)
+        self.n = self.h_act(
+            self.Wnx @ self.x + self.bin + self.r * (self.Wnh @ h + self.bhn)
+        )
+        h_t = (1 - self.z) * self.n + self.z * h
 
         assert self.x.shape == (self.d,)
         assert self.hidden.shape == (self.h,)
@@ -100,7 +106,7 @@ class GRUCell(object):
         assert h_t.shape == (self.h,)
 
         # return h_t
-        raise NotImplementedError
+        return h_t
 
     def backward(self, delta):
         """GRU cell backward.
@@ -124,19 +130,53 @@ class GRUCell(object):
             derivative of the loss wrt the input hidden h.
 
         """
-        # 1) Reshape self.x and self.h to (input_dim, 1) and (hidden_dim, 1) respectively
-        #    when computing self.dWs...
-        # 2) Transpose all calculated dWs...
-        # 3) Compute all of the derivatives
-        # 4) Know that the autograder grades the gradients in a certain order, and the
-        #    local autograder will tell you which gradient you are currently failing.
+        # Keep the cached vectors one-dimensional for elementwise derivatives.
+        # Use column views only when forming outer products for parameter gradients.
+        delta = np.asarray(delta).reshape(self.h)
 
         # ADDITIONAL TIP:
         # Make sure the shapes of the calculated dWs and dbs  match the
         # initalized shapes accordingly
+        x_col = self.x.reshape(self.d, 1)
+        h_col = self.hidden.reshape(self.h, 1)
+
+        d_loss_n = delta * (1 - self.z) * self.h_act.derivative(state=self.n)
+        d_loss_z = delta * (self.hidden - self.n) * self.z * (1 - self.z)
+        d_loss_r = (
+            d_loss_n
+            * (self.Wnh @ self.hidden + self.bhn)
+            * self.r
+            * (1 - self.r)
+        )
+
+        self.dWrx += d_loss_r.reshape(self.h, 1) @ x_col.T
+        self.dbir += d_loss_r
+        self.dWrh += d_loss_r.reshape(self.h, 1) @ h_col.T
+        self.dbhr += d_loss_r
+
+        self.dWzx += d_loss_z.reshape(self.h, 1) @ x_col.T
+        self.dbiz += d_loss_z
+        self.dWzh += d_loss_z.reshape(self.h, 1) @ h_col.T
+        self.dbhz += d_loss_z
+
+        self.dWnx += d_loss_n.reshape(self.h, 1) @ x_col.T
+        self.dbin += d_loss_n
+        self.dWnh += (d_loss_n * self.r).reshape(self.h, 1) @ h_col.T
+        self.dbhn += d_loss_n * self.r
+
+        dx = self.Wrx.T @ d_loss_r + self.Wzx.T @ d_loss_z + self.Wnx.T @ d_loss_n
+        dh = (
+            delta * self.z
+            + self.Wrh.T @ d_loss_r
+            + self.Wzh.T @ d_loss_z
+            + self.Wnh.T @ (d_loss_n * self.r)
+        )
+
+        dx = dx.reshape(1, self.d)
+        dh = dh.reshape(1, self.h)
 
         assert dx.shape == (1, self.d)
         assert dh.shape == (1, self.h)
 
         # return dx, dh
-        raise NotImplementedError
+        return dx, dh

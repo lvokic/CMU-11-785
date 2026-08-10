@@ -66,8 +66,10 @@ class RNNCell(object):
         """
         # h_prime =
         # return h_prime
-
-        raise NotImplementedError
+        h_prime = self.activation(
+            h @ self.W_hh.T + self.b_hh + x @ self.W_ih.T + self.b_ih
+        )
+        return h_prime
 
     def backward(self, delta, h, h_prev_l, h_prev_t):
         """RNN Cell backward (single time step).
@@ -103,16 +105,14 @@ class RNNCell(object):
         dz = self.activation.derivative(state=h) * delta
 
         # 1) Compute the averaged gradients of the weights and biases
-        # self.dW_ih +=
-        # self.dW_hh +=
-        # self.db_ih +=
-        # self.db_hh +=
+        self.dW_ih += (dz.T @ h_prev_l) / batch_size
+        self.dW_hh += (dz.T @ h_prev_t) / batch_size
+        self.db_ih += dz.sum(axis=0) / batch_size
+        self.db_hh += dz.sum(axis=0) / batch_size
 
         # 2) Compute dx, dh
-        # dx =
-        # dh =
+        dx = dz @ self.W_ih
+        dh = dz @ self.W_hh
 
         # 3) Return dx, dh
-        # return dx, dh
-
-        raise NotImplementedError
+        return dx, dh

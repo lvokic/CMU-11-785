@@ -29,4 +29,3 @@ class Linear(object):
         self.dW = np.dot(delta.T, self.x) / batch_size
         dx = np.dot(delta, self.W)
         return dx
-
