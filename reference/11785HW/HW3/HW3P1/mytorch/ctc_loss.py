@@ -16,6 +16,7 @@ class CTCLoss(object):
         super(CTCLoss, self).__init__()
         self.BLANK = BLANK
         self.gammas = []
+        self.ctc = CTC(BLANK=self.BLANK)
         # <---------------------------------------------
 
     def __call__(self, logits, target, input_lengths, target_lengths):
@@ -65,6 +66,7 @@ class CTCLoss(object):
         # Don't Need Modify
         B, _ = target.shape
         totalLoss = np.zeros(B)
+        self.gammas = []
         # <---------------------------------------------
 
         for b in range(B):
@@ -79,12 +81,29 @@ class CTCLoss(object):
             # <---------------------------------------------
 
             # -------------------------------------------->
+            T_b = int(input_lengths[b])
+            L_b = int(target_lengths[b])
 
-            # Your Code goes here
-            raise NotImplementedError
+            sample_logits = logits[:T_b, b, :]
+            sample_target = target[b, :L_b]
+
+            extSymbols, skipConnect = self.ctc.targetWithBlank(target=sample_target)
+            alpha = self.ctc.forwardProb(
+                logits=sample_logits, extSymbols=extSymbols, skipConnect=skipConnect
+            )
+            beta = self.ctc.backwardProb(
+                logits=sample_logits, extSymbols=extSymbols, skipConnect=skipConnect
+            )
+            gamma = self.ctc.postProb(alpha=alpha, beta=beta)
+
+            selected_probs = sample_logits[:, extSymbols]
+            selected_probs = np.clip(selected_probs, 1e-12, None)
+
+            totalLoss[b] = -np.sum(gamma * np.log(selected_probs))
+            self.gammas.append(gamma)
             # <---------------------------------------------
 
-        return totalLoss
+        return np.mean(totalLoss)
 
     def backward(self):
         """CTC loss backard.
@@ -108,8 +127,9 @@ class CTCLoss(object):
 
         Returns
         -------
-        dY: scalar
-            derivative of divergence wrt the input symbols at each time.
+        dY: np.ndarray, shape = (seqlength, batch_size, len(Symbols))
+            Derivative of the divergence with respect to the input symbols
+            at each time step, sample, and class.
 
         """
         # -------------------------------------------->
@@ -124,9 +144,21 @@ class CTCLoss(object):
             # <---------------------------------------------
 
             # -------------------------------------------->
+            gamma = self.gammas[b]
+            input_length = int(self.input_lengths[b])
+            target_length = int(self.target_lengths[b])
 
-            # Your Code goes here
-            raise NotImplementedError
+            target_b = self.target[b, :target_length]
+            extSymbols, _ = self.ctc.targetWithBlank(target_b)
+
+            probs = np.clip(self.logits[:input_length, b, :], 1e-12, None)
+            grad = np.zeros_like(probs)
+
+            for t in range(input_length):
+                for s, symbol in enumerate(extSymbols):
+                    grad[t, symbol] -= gamma[t, s] / probs[t, symbol]
+
+            dY[:input_length, b, :] = grad
             # <---------------------------------------------
 
         return dY

@@ -37,7 +37,15 @@ class CTC(object):
         # -------------------------------------------->
 
         # Your Code goes here
-        raise NotImplementedError
+        target = np.asarray(target).reshape(-1)
+        L = len(target)
+        S = 2 * L + 1
+        extSymbols = np.full(S, self.BLANK, dtype=target.dtype)
+        extSymbols[1::2] = target
+        skipConnect = np.zeros(S, dtype=int)
+        for s in range(2, S):
+            if extSymbols[s] != self.BLANK and extSymbols[s] != extSymbols[s - 2]:
+                skipConnect[s] = 1
         # <---------------------------------------------
 
         return extSymbols, skipConnect
@@ -66,9 +74,21 @@ class CTC(object):
         alpha = np.zeros(shape=(T, S))
 
         # -------------------------------------------->
+        if T == 0 or S == 0:
+            return alpha
 
-        # Your Code goes here
-        raise NotImplementedError
+        alpha[0, 0] = logits[0, extSymbols[0]]
+        if S > 1:
+            alpha[0, 1] = logits[0, extSymbols[1]]
+
+        for t in range(1, T):
+            for s in range(S):
+                prev = alpha[t - 1, s]
+                if s > 0:
+                    prev += alpha[t - 1, s - 1]
+                if s > 1 and skipConnect[s]:
+                    prev += alpha[t - 1, s - 2]
+                alpha[t, s] = prev * logits[t, extSymbols[s]]
         # <---------------------------------------------
 
         return alpha
@@ -98,9 +118,18 @@ class CTC(object):
         beta = np.zeros(shape=(T, S))
 
         # -------------------------------------------->
+        beta[T - 1, S - 1] = 1
+        if S > 1:
+            beta[T - 1, S - 2] = 1
+        for t in reversed(range(T - 1)):
+            for s in reversed(range(S)):
+                after = beta[t + 1, s] * logits[t + 1, extSymbols[s]]
+                if s < S - 1:
+                    after += beta[t + 1, s + 1] * logits[t + 1, extSymbols[s + 1]]
+                if s < S - 2 and skipConnect[s + 2]:
+                    after += beta[t + 1, s + 2] * logits[t + 1, extSymbols[s + 2]]
 
-        # Your Code goes here
-        raise NotImplementedError
+                beta[t, s] = after
         # <---------------------------------------------
 
         return beta
@@ -125,9 +154,12 @@ class CTC(object):
         gamma = None
 
         # -------------------------------------------->
-
-        # Your Code goes here
-        raise NotImplementedError
+        T, S = alpha.shape
+        gamma = alpha * beta
+        column_sums = gamma.sum(axis=1, keepdims=True)
+        gamma = np.divide(
+            gamma, column_sums, out=np.zeros_like(gamma), where=column_sums != 0
+        )
         # <---------------------------------------------
 
         return gamma

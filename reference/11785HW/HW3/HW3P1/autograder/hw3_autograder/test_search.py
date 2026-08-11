@@ -15,7 +15,7 @@ isTesting = True
 # DO NOT CHANGE -->
 EPS = 1e-20
 SEED = 2021
-# np.random.seed(SEED)
+np.random.seed(SEED)
 
 
 ############################################################################################
