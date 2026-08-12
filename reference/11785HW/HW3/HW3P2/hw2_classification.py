@@ -1,242 +1,330 @@
-import os
-import torch.utils.data
-from utils.base import *
-from tqdm import tqdm
-import numpy as np
-from ctcdecode import CTCBeamDecoder
-from utils.phoneme_list import N_PHONEMES, PHONEME_MAP
-from models import *
+"""HW3P2 — Utterance-to-phoneme mapping (clean handout entry point).
+
+The Spring 2021 writeup intentionally did not prescribe a training framework.
+Implement the data pipeline, training loop, decoding, and CSV generation here.
+
+Data directory expected by the writeup:
+    train.npy, train_labels.npy, dev.npy, dev_labels.npy, test.npy,
+    sample_submission.csv, phoneme_list.py
+"""
 
 import argparse
+from pathlib import Path
 
-num_workers = 4
+import numpy as np
+import torch
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+from torch.nn.utils.rnn import pad_sequence
+from torchaudio.models.decoder import cuda_ctc_decoder
+from tqdm import tqdm
+
+from models import ModelHW3
+from utils.base import Learning, Params
+from utils.phoneme_list import N_PHONEMES, PHONEME_MAP
+
+N_FEATURES = 40
+N_CLASSES = N_PHONEMES + 1  # CTC blank is class 0.
 
 
 class ParamsHW3(Params):
-    def __init__(self, B, lr, dropout, device, max_epoch=201,
-                 data_dir='/home/zongyuez/dldata/HW3'):
-        super().__init__(B=B, lr=lr, max_epoch=max_epoch, dropout=dropout,
-                         output_channels=1 + N_PHONEMES,
-                         data_dir=data_dir, device=device, input_dims=(40,))
+    """HW3P2-specific parameters consumed by ModelHW3 and Learning."""
 
-        self.str = 'class_b=' + str(self.B) + 'lr=' + str(
-                self.lr) + '_'  # 'd=' + str(self.dropout)'
+    def __init__(self, batch_size, lr, dropout, device, max_epoch=20, data_dir=""):
+        super().__init__(
+            B=batch_size,
+            lr=lr,
+            dropout=dropout,
+            max_epoch=max_epoch,
+            data_dir=str(data_dir),
+            device=torch.device(device),
+            input_dims=(N_FEATURES,),
+            output_channels=N_CLASSES,
+        )
 
     def __str__(self):
-        return self.str
+        return f"b={self.B}_lr={self.lr}_dropout={self.dropout}"
 
 
-class TrainSetHW3(torch.utils.data.Dataset):
-    def __init__(self, X_path, Y_path):
-        super().__init__()
-        X = np.load(X_path, allow_pickle=True)
-        self.N = X.shape[0]
-        self.X = []
-        self.lengths_X = []
-        for x in X:
-            self.X.append(torch.as_tensor(x, dtype=torch.float))
-            self.lengths_X.append(x.shape[0])
-        self.X = torch.nn.utils.rnn.pad_sequence(self.X, batch_first=True)
-        self.len = self.X.shape[0]
+class PhonemeDataset(Dataset):
+    """Load variable-length mel features and optional phoneme targets."""
 
-        Y = np.load(Y_path, allow_pickle=True)
-        self.lengths_Y = []
-        self.Y = []
-        for y in Y:
-            self.Y.append(torch.as_tensor(y, dtype=torch.long))
-            self.lengths_Y.append(y.shape[0])
-        self.Y = torch.nn.utils.rnn.pad_sequence(self.Y, batch_first=True)
+    def __init__(self, x_path: Path, y_path: Path | None = None):
+        self.features = np.load(x_path, allow_pickle=True)
+        self.targets = None if y_path is None else np.load(y_path, allow_pickle=True)
 
-        print(X_path, self.__len__())
+        if self.targets is not None:
+            assert len(self.features) == len(self.targets)
 
-    def __getitem__(self, index):
-        return self.X[index], self.lengths_X[index], self.Y[index], self.lengths_Y[index]
+    def __len__(self) -> int:
+        return len(self.features)
 
-    def __len__(self):
-        return self.len
+    def __getitem__(self, index: int):
+        x = torch.as_tensor(self.features[index], dtype=torch.float32)
+        if self.targets is None:
+            return x
+        y = torch.as_tensor(self.targets[index], dtype=torch.long)
+        return x, y
 
 
-class TestSetHW3(torch.utils.data.Dataset):
-    def __init__(self, X_path):
-        super().__init__()
-        X = np.load(X_path, allow_pickle=True)
-        self.N = X.shape[0]
-        self.X = []
-        self.lengths = []
-        for x in X:
-            self.X.append(torch.as_tensor(x, dtype=torch.float))
-            self.lengths.append(x.shape[0])
-        self.X = torch.nn.utils.rnn.pad_sequence(self.X, batch_first=True)
-        self.len = self.X.shape[0]
+def collate_train(batch):
+    """TODO: pad a feature/label batch and return CTC-compatible lengths."""
+    features, targets = zip(*batch)
+    input_lengths = torch.tensor([x.shape[0] for x in features], dtype=torch.long)
+    target_lengths = torch.tensor([x.shape[0] for x in targets], dtype=torch.long)
+    padded_features = pad_sequence(list(features), batch_first=True, padding_value=0.0)
+    padded_targets = pad_sequence(list(targets), batch_first=True, padding_value=0)
+    return padded_features, padded_targets, input_lengths, target_lengths
 
-        print(X_path, self.__len__())
 
-    def __getitem__(self, index):
-        return self.X[index], self.lengths[index]
+def collate_test(batch):
+    """TODO: pad a feature-only batch and return feature lengths."""
+    feature_lengths = torch.tensor([x.shape[0] for x in batch], dtype=torch.long)
+    padded_features = pad_sequence(batch, batch_first=True, padding_value=0.0)
+    return padded_features, feature_lengths
 
-    def __len__(self):
-        return self.len
+
+def edit_distance(predicted, target):
+    """Levenshtein distance between two phoneme-ID sequences."""
+    previous = list(range(len(target) + 1))
+    for i, predicted_token in enumerate(predicted, start=1):
+        current = [i]
+        for j, target_token in enumerate(target, start=1):
+            current.append(min(
+                previous[j] + 1,
+                current[j - 1] + 1,
+                previous[j - 1] + (predicted_token != target_token),
+            ))
+        previous = current
+    return previous[-1]
 
 
 class HW3(Learning):
-    def __init__(self, params: ParamsHW3, model):
+    """Required concrete shell around the abstract ``Learning`` base class."""
+
+    def __init__(self, params: ParamsHW3, model: ModelHW3):
         super().__init__(params, model, torch.optim.Adam, nn.CTCLoss)
-        self.decoder = CTCBeamDecoder(PHONEME_MAP)
-        print(str(self))
+        self.decoder = cuda_ctc_decoder(
+            tokens=PHONEME_MAP, nbest=1, beam_size=10
+        )
 
     def _load_train(self):
-        train_set = TrainSetHW3(os.path.join(self.params.data_dir, 'train.npy'),
-                                os.path.join(self.params.data_dir, 'train_labels.npy'))
-        self.train_loader = torch.utils.data.DataLoader(train_set,
-                                                        batch_size=self.params.B, shuffle=True,
-                                                        pin_memory=True, num_workers=num_workers)
+        dataset = PhonemeDataset(
+            Path(self.params.data_dir) / "train.npy",
+            Path(self.params.data_dir) / "train_labels.npy",
+        )
+        self.train_loader = DataLoader(
+            dataset,
+            batch_size=self.params.B,
+            shuffle=True,
+            collate_fn=collate_train,
+            num_workers=0,
+        )
 
     def _load_valid(self):
-        valid_set = TrainSetHW3(os.path.join(self.params.data_dir, 'dev.npy'),
-                                os.path.join(self.params.data_dir, 'dev_labels.npy'))
-
-        self.valid_loader = torch.utils.data.DataLoader(valid_set,
-                                                        batch_size=self.params.B, shuffle=False,
-                                                        pin_memory=True, num_workers=num_workers)
+        dataset = PhonemeDataset(
+            Path(self.params.data_dir) / "dev.npy",
+            Path(self.params.data_dir) / "dev_labels.npy",
+        )
+        self.valid_loader = DataLoader(
+            dataset,
+            batch_size=self.params.B,
+            shuffle=False,
+            collate_fn=collate_train,
+            num_workers=0,
+        )
 
     def _load_test(self):
-        test_set = TestSetHW3(os.path.join(self.params.data_dir, 'test.npy'))
+        dataset = PhonemeDataset(Path(self.params.data_dir) / "test.npy")
+        self.test_loader = DataLoader(
+            dataset,
+            batch_size=self.params.B,
+            shuffle=False,
+            collate_fn=collate_test,
+            num_workers=0,
+        )
 
-        self.test_loader = torch.utils.data.DataLoader(test_set,
-                                                       batch_size=self.params.B, shuffle=False,
-                                                       pin_memory=True, num_workers=num_workers)
+    def train_one_epoch(self):
+        if self.train_loader == None:
+            self._load_train()
 
-    def decode(self, output):
-        """
-        :param output: (T,B,42)
-        :return:
-        """
-        return self.decoder.decode(torch.transpose(output, 0, 1))
+        total_loss = 0.0
+        total_correct = 0
+        total_samples = 0
+        with torch.cuda.device(self.device):
+            self.model.train()
+            for bx, by, input_lengths, target_lengths in tqdm(self.train_loader):
+                bx = bx.to(self.device)
+                by = by.to(self.device)
+
+                log_probs = self.model(bx, input_lengths)
+                loss = self.criterion(log_probs, by, input_lengths, target_lengths)
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+
+                batch_size = bx.shape[0]
+                total_loss += loss.item() * batch_size
+                total_samples += batch_size
+
+                decoder_lengths = input_lengths.to(
+                    device=self.device, dtype=torch.int32
+                )
+                hypotheses = self.decoder(
+                    log_probs.detach().transpose(0, 1).contiguous(), decoder_lengths
+                )
+
+                for b, hypothesis_list in enumerate(hypotheses):
+                    preidcted_ids = hypothesis_list[0].tokens.tolist()
+                    true_ids = by[b, : target_lengths[b]].tolist()
+                    if preidcted_ids == true_ids:
+                        total_correct += 1
+
+        mean_loss = total_loss / total_samples
+        sequence_accuracy = total_correct / total_samples
+        return mean_loss, sequence_accuracy
 
     def train(self, checkpoint_interval=5):
         if self.train_loader is None:
             self._load_train()
 
-        print('Training...')
+        Path("checkpoints").mkdir(exist_ok=True)
+        print("Training...")
         with torch.cuda.device(self.device):
             self.model.train()
-            for epoch in range(self.init_epoch + 1, self.params.max_epoch):
-                total_loss = torch.zeros(1, device=self.device)
-                # total_acc = torch.zeros(1, device=self.device)
-                for i, batch in enumerate(tqdm(self.train_loader)):
-                    x = batch[0].to(self.device)
-                    lengths_x = tuple(batch[1])
-                    y = batch[2].to(self.device)
-                    lengths_y = tuple(batch[2])
+            for epoch in range(self.init_epoch + 1, self.params.max_epoch + 1):
+                train_loss, train_acc = self.train_one_epoch()
+                self.writer.add_scalar("Loss/Train", train_loss, epoch)
+                self.writer.add_scalar("Accuracy/Train", train_acc, epoch)
+                print(
+                    f"Epoch {epoch}: "
+                    f"train_loss={train_loss:.5f} "
+                    f"sequence_acc={train_acc:.5f}"
+                )
 
-                    # (T,N,C)
-                    output = self.model(x, lengths_x)
-
-                    loss = self.criterion(output, y, lengths_x, lengths_y)
-                    total_loss += loss
-
-                    self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
-
-                loss_item = total_loss.item() / (i + 1)
-
-                self.writer.add_scalar('Loss/Train', loss_item, epoch)
-
-                print('epoch: ', epoch, 'Training Loss: ', "%.5f" % loss_item)
-
-                self._validate(epoch)
+                val_loss, val_per = self.validate()
+                self.writer.add_scalar("Loss/Validation", val_loss, epoch)
+                self.writer.add_scalar("PER/Validation", val_per, epoch)
+                print(
+                    f"Epoch {epoch}: "
+                    f"val_loss={val_loss:.5f} val_PER={val_per:.4%}"
+                )
                 self.model.train()
-
                 if epoch % checkpoint_interval == 0:
                     self.save_model(epoch)
 
-    def _validate(self, epoch):
+    def validate(self):
         if self.valid_loader is None:
             self._load_valid()
 
-        # print('Validating...')
+        total_loss = 0.0
+        total_samples = 0
+        total_edit_distance = 0
+        total_target_phonemes = 0
+
+        print("Validating...")
         with torch.cuda.device(self.device):
             with torch.no_grad():
                 self.model.eval()
-                total_loss = torch.zeros(1, device=self.device)
+                for bx, by, input_lengths, target_lengths in tqdm(self.valid_loader):
+                    bx = bx.to(self.device)
+                    by = by.to(self.device)
 
-                for i, batch in enumerate(self.valid_loader):
-                    x = batch[0].to(self.device)
-                    lengths_x = tuple(batch[1])
-                    y = batch[2].to(self.device)
-                    lengths_y = tuple(batch[2])
+                    log_probs = self.model(bx, input_lengths)
+                    loss = self.criterion(log_probs, by, input_lengths, target_lengths)
 
-                    output = self.model(x, lengths_x)
+                    batch_size = bx.shape[0]
+                    total_loss += loss.item() * batch_size
+                    total_samples += batch_size
+                    decoder_lengths = input_lengths.to(
+                        device=self.device, dtype=torch.int32
+                    )
+                    hypotheses = self.decoder(
+                        log_probs.detach().transpose(0, 1).contiguous(), decoder_lengths
+                    )
 
-                    loss = self.criterion(output, y, lengths_x, lengths_y)
-                    total_loss += loss
+                    for b, hypothesis_list in enumerate(hypotheses):
+                        predicted_ids = hypothesis_list[0].tokens.tolist()
+                        target_length = int(target_lengths[b])
+                        true_ids = by[b, :target_length].tolist()
+                        total_edit_distance += edit_distance(predicted_ids, true_ids)
+                        total_target_phonemes += target_length
 
-                    self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
-
-                loss_item = total_loss.item() / (i + 1)
-                self.writer.add_scalar('Loss/Validation', loss_item, epoch)
-
-                print('epoch: ', epoch, 'Validation Loss: ', "%.5f" % loss_item)
+        mean_loss = total_loss / total_samples
+        phoneme_error_rate = total_edit_distance / total_target_phonemes
+        return mean_loss, phoneme_error_rate
 
     def test(self):
+        """TODO: decode test predictions and write submission.csv."""
         if self.test_loader is None:
             self._load_test()
 
-        with open('results/' + str(self) + '.csv', 'w') as f:
-            f.write('id,label\n')
-            with torch.cuda.device(self.device):
-                with torch.no_grad():
-                    self.model.eval()
-                    for (i, item) in enumerate(tqdm(self.test_loader)):
-                        x = item[0].to(self.device)
-                        lengths = tuple(item[1])
+        predictions = []
+        print("Testing...")
+        with torch.cuda.device(self.device):
+            with torch.no_grad():
+                self.model.eval()
+                for bx, input_lengths in tqdm(self.test_loader):
+                    bx = bx.to(self.device)
 
-                        # (T,N,C)
-                        output = self.model(x, lengths)
-                        decoded = self.decode(output)
+                    log_probs = self.model(bx, input_lengths)
+                    decoder_lengths = input_lengths.to(
+                        device=self.device, dtype=torch.int32
+                    )
+                    hypotheses = self.decoder(
+                        log_probs.detach().transpose(0, 1).contiguous(), decoder_lengths
+                    )
+                    for hypothesis_list in hypotheses:
+                        predicted_ids = hypothesis_list[0].tokens.tolist()
+                        phoneme_string = "".join(
+                            PHONEME_MAP[int(token)] for token in predicted_ids
+                        )
+                        predictions.append(phoneme_string)
 
-                        for b in range(x.shape[0]):
-                            f.write(str(i * self.params.B + b) + ',')
-                            letters = decoded[0][b, 0, 0:decoded[3][b, 0]]
-                            for letter in letters:
-                                f.write(PHONEME_MAP[letter])
-                            f.write('\n')
+        output_path = Path("submission.csv")
+        with output_path.open("w", encoding="utf-8") as file:
+            file.write("id,label\n")
+            for index, prediction in enumerate(predictions):
+                file.write(f"{index},{prediction}\n")
+        print(f"Saved {len(predictions)} predictions to {output_path}")
+        return output_path
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch', help='Batch Size', default=16, type=int)
-    parser.add_argument('--dropout', default=0.0, type=float)
-    parser.add_argument('--lr', default=1e-3, type=float)
-    parser.add_argument('--gpu_id', help='GPU ID (0/1)', default='0')
-    parser.add_argument('--model', default='EfficientNetB4', help='Model Name')
-    parser.add_argument('--epoch', default=-1, help='Load Epoch', type=int)
-    parser.add_argument('--train', action='store_true')
-    parser.add_argument('--test', action='store_true')
-    parser.add_argument('--save', default=1, type=int, help='Checkpoint interval')
-    parser.add_argument('--load', default='', help='Load Name')
-
+    parser.add_argument("--data_dir", type=Path, required=True)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--dropout", type=float, default=0.0)
+    parser.add_argument("--epochs", type=int, default=20)
+    parser.add_argument(
+        "--device", default="cuda" if torch.cuda.is_available() else "cpu"
+    )
+    parser.add_argument("--train", action="store_true")
+    parser.add_argument("--test", action="store_true")
+    parser.add_argument("--save_every", type=int, default=5)
     args = parser.parse_args()
 
-    params = ParamsHW3(B=args.batch, dropout=args.dropout, lr=args.lr,
-                       device='cuda:' + args.gpu_id)
-
-    model = eval(args.model + '(params)')
+    # TODO: construct ModelHW3, loaders, Adam/AdamW, and nn.CTCLoss(blank=0).
+    # TODO: train, validate, decode the test set, and call write_submission().
+    if not args.train and not args.test:
+        parser.error("Specify at least one action: --train and/or --test")
+    params = ParamsHW3(
+        batch_size=args.batch_size,
+        lr=args.lr,
+        dropout=args.dropout,
+        device=args.device,
+        max_epoch=args.epochs,
+        data_dir=args.data_dir,
+    )
+    model = ModelHW3(params)
     learner = HW3(params, model)
-    if args.epoch >= 0:
-        if args.load == '':
-            learner.load_model(args.epoch)
-        else:
-            learner.load_model(args.epoch, args.load)
 
     if args.train:
-        learner.train(checkpoint_interval=args.save)
+        learner.train(checkpoint_interval=args.save_every)
     if args.test:
         learner.test()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
