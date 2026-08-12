@@ -256,74 +256,75 @@
         <div class="eyebrow">CMU 11-785 · Introduction to Deep Learning · Spring 2026</div>
         <h1>个人学习 Schedule</h1>
         <p>
-            这是按照课程仓库整理的自学路线。截至 2026-08-06，你已完成
-            <strong>Recitation 0.1–0.16、Lecture 1–12、Lab 1–6、HW0–2</strong>；
-            下一阶段进入 RNN 主线和 HW3。课程原始日期仅作为参考，当前执行以内容顺序为准。
+            这是从 11-785 过渡到 CS336 的自学路线。截至 2026-08-12，你已完成
+            <strong>Recitation 0.1–0.16、Lecture 1–15、Lab 1–9、HW0–3</strong>。
+            HW3P2 已完成 CNN + BiLSTM + CTC + CUDA beam search 的端到端闭环；下一阶段是
+            Attention、LAS、Transformer，并最终转向 CS336 的训练与推理系统。
         </p>
         <div class="stats">
             <div class="stat"><div class="stat-label">Recitations</div><div class="stat-value"><span id="done-count">16</span> / 28 完成</div></div>
-            <div class="stat"><div class="stat-label">Lectures</div><div class="stat-value">1–12 已完成</div></div>
-            <div class="stat"><div class="stat-label">Labs</div><div class="stat-value">1–6 已完成</div></div>
-            <div class="stat"><div class="stat-label">Assignments</div><div class="stat-value">HW0–2 已完成</div></div>
+            <div class="stat"><div class="stat-label">Lectures</div><div class="stat-value">1–15 已完成</div></div>
+            <div class="stat"><div class="stat-label">Labs</div><div class="stat-value">1–9 已完成</div></div>
+            <div class="stat"><div class="stat-label">Assignments</div><div class="stat-value">HW0–3 已完成</div></div>
         </div>
     </header>
 
     <section class="callout">
         <div>
-            <h2>现在开始：RNN 主线 + HW3</h2>
+            <h2>现在开始：Attention / LAS → Transformer</h2>
             <p>
-                你已经完成 CNN 相关的 Lecture 9–12、Lab 4–6 和 HW2。接下来进入 Lecture 13–16 的 RNN、Seq2Seq 和 CTC，
-                并按 HW3P1 → HW3P2 推进。
+                先补完 Lecture 16，用 CTC 复盘 HW3P2；随后完成 Lecture 17–20、Lab 10–11 与 HW4 的最小闭环。
+                这会建立 encoder-decoder、attention、teacher forcing、autoregressive decoding、Transformer 与 KV cache 的共同基础。
             </p>
         </div>
-        <a class="button" href="S26/documents/labs/lab_7/S26_StudentNotebook_RNN_Lab_7.ipynb">开始 Lab 7</a>
+        <a class="button" href="S26/documents/labs/lab_10/Student_Notebook_Lab_10.ipynb">开始 Lab 10</a>
     </section>
 
     <section>
-        <h2>接下来 7 个学习单元</h2>
-        <p class="section-lead">建议每个单元完成“看材料 → 跑 notebook → 写小结 → 做一个可验证练习”。</p>
+        <h2>后续 7 个学习单元</h2>
+        <p class="section-lead">主线以 Transformer 与推理系统为终点；每个单元都完成“看材料 → 跑 notebook → 写小结 → 一个可验证练习”。</p>
         <div class="grid">
             <article class="card next">
                 <span class="number">1</span>
-                <h3>Recitation 0.17–0.19</h3>
-                <p>学习 WandB、Debugging 和遇到困难时的排查方法。</p>
+                <h3>Lecture 16：CTC 收束</h3>
+                <p>复盘 blank、对齐路径、forward-backward、beam search；把它和已完成 HW3P1/P2 对应起来。</p>
                 <label class="check"><input class="task" data-key="r0.17-0.19" type="checkbox"> 完成</label>
             </article>
             <article class="card">
                 <span class="number">2</span>
-                <h3>Lecture 13–16</h3>
-                <p>学习 RNN、Seq2Seq、CTC、blank labels 和 beam search。</p>
-                <label class="check"><input class="task" data-key="lec13-16" type="checkbox"> 完成</label>
+                <h3>Lecture 17–18 + Lab 10</h3>
+                <p>语言模型、Seq2Seq、attention、LAS；完成 HW4P2 的 Dataset → listener → speller 最小闭环。</p>
+                <label class="check"><input class="task" data-key="lec16-18-lab10" type="checkbox"> 完成</label>
             </article>
             <article class="card">
                 <span class="number">3</span>
-                <h3>Lab 7–9</h3>
-                <p>完成 RNN Basics、Kaggle / pretrained models、CTC 和 beam search 实验。</p>
-                <label class="check"><input class="task" data-key="labs7-9" type="checkbox"> 完成</label>
+                <h3>HW4P1：Language Model</h3>
+                <p>实现 next-token logits、hidden state、autoregressive generation、weight tying 与 recurrent regularization。</p>
+                <label class="check"><input class="task" data-key="hw4p1" type="checkbox"> 完成</label>
             </article>
             <article class="card">
                 <span class="number">4</span>
-                <h3>HW3P1 → HW3P2</h3>
-                <p>先完成序列建模和 CTC baseline，再进行语音识别与解码实验。</p>
-                <label class="check"><input class="task" data-key="hw3" type="checkbox"> 完成</label>
+                <h3>Lecture 19–20 + Lab 11</h3>
+                <p>掌握 self-attention、multi-head attention、Transformer block、causal mask 与训练/推理差异。</p>
+                <label class="check"><input class="task" data-key="lec19-20-lab11" type="checkbox"> 完成</label>
             </article>
             <article class="card">
                 <span class="number">5</span>
-                <h3>Recitation 0.20–0.25</h3>
-                <p>补充 losses、block processing、pipeline、distributed training 和模型保存。</p>
-                <label class="check"><input class="task" data-key="r0.20-0.25" type="checkbox"> 完成</label>
+                <h3>HW4P2：LAS 最小闭环</h3>
+                <p>实现 pBLSTM、attention、teacher forcing、masked CE 与自回归/beam decoding；以理解优先，不刷 Kaggle。</p>
+                <label class="check"><input class="task" data-key="hw4p2" type="checkbox"> 完成</label>
             </article>
             <article class="card">
                 <span class="number">6</span>
-                <h3>Lecture 17–20 + Lab 10–11</h3>
-                <p>进入语言模型、机器翻译、attention 和 Transformer 主线。</p>
-                <label class="check"><input class="task" data-key="lec17-20-labs10-11" type="checkbox"> 完成</label>
+                <h3>必要 Recitations</h3>
+                <p>优先 0.20–0.25：loss、block processing、pipeline、distributed training、checkpoint；0.17–0.19 按需补。</p>
+                <label class="check"><input class="task" data-key="r0.20-0.25" type="checkbox"> 完成</label>
             </article>
             <article class="card">
                 <span class="number">7</span>
-                <h3>Lecture 21–24</h3>
-                <p>学习 representation、autoencoder、VAE、diffusion 和 GAN。</p>
-                <label class="check"><input class="task" data-key="lec21-24" type="checkbox"> 完成</label>
+                <h3>转向 CS336</h3>
+                <p>优先 Transformer 训练、tokenization、optimizer、distributed training、prefill/decode、KV cache、continuous batching 与显存/带宽分析。</p>
+                <label class="check"><input class="task" data-key="cs336-transition" type="checkbox"> 完成</label>
             </article>
         </div>
         <div class="progress-wrap">
@@ -374,7 +375,7 @@
 
     <section>
         <h2>核心课程主线</h2>
-        <p class="section-lead">Recitation 是工具和工程支持；Lecture、Lab、HW 是主线。建议不要等到所有资源类 Recitation 完成后才开始 MLP。</p>
+        <p class="section-lead">Recitation 是工具和工程支持；Lecture、Lab、HW 是主线。对 KV-cache offloading 目标，优先完成 attention/Transformer，再转向 CS336 的训练与推理系统。</p>
         <div class="table-scroll">
             <table>
                 <thead><tr><th>课程阶段</th><th>Lectures</th><th>主题</th><th>配套 Lab / 目标</th></tr></thead>
@@ -382,10 +383,10 @@
                     <tr><td>基础与训练</td><td>1–5 <span class="badge done">已完成</span></td><td>Introduction、Universal Approximation、ERM、Gradient Descent、Backpropagation</td><td>Lab 1：Your First MLP <span class="badge done">已完成</span>；HW0 <span class="badge done">已完成</span></td></tr>
                     <tr><td>优化与正则化</td><td>6–8 <span class="badge done">已完成</span></td><td>Loss Surfaces、Momentum、SGD / Mini-batch、Optimizers、Regularizers、BatchNorm、Dropout</td><td>Lab 2–4 <span class="badge done">已完成</span>；HW1 <span class="badge done">已完成</span></td></tr>
                     <tr><td>CNN</td><td>9–12 <span class="badge done">已完成</span></td><td>Convolutional Neural Networks I–IV</td><td>Lab 5–6 <span class="badge done">已完成</span>；HW2 <span class="badge done">已完成</span></td></tr>
-                    <tr><td>序列模型</td><td>13–16 <span class="badge next">下一阶段</span></td><td>RNN、Seq2Seq、CTC、Blanks、Beam Search</td><td>Lab 7–9、HW3 主线</td></tr>
-                    <tr><td>语言模型与 Transformer</td><td>17–20</td><td>Language Models、Translation、Attention、Transformers、LLMs</td><td>Lab 10–11：Attention / MT / LAS、Transformers；HW4 主线</td></tr>
-                    <tr><td>生成模型</td><td>21–24</td><td>Representation、Autoencoders、VAE、Diffusion、GAN</td><td>Lab 12–14：VAE、NF / Stable Diffusion、GAN</td></tr>
-                    <tr><td>其他模型</td><td>25–28</td><td>GNN、Reinforcement Learning、Hopfield Networks、Boltzmann Machines</td><td>Lab 15：Graph Neural Networks；完成 project / 复习</td></tr>
+                    <tr><td>序列模型</td><td>13–15 <span class="badge done">已完成</span>；16 <span class="badge next">下一项</span></td><td>RNN、Seq2Seq、CTC、Blanks、Beam Search</td><td>Lab 7–9、HW3 <span class="badge done">已完成</span>；用 Lecture 16 收束理解</td></tr>
+                    <tr><td>语言模型与 Transformer</td><td>17–20 <span class="badge next">核心下一阶段</span></td><td>Language Models、Translation、Attention、Transformers、LLMs</td><td>Lab 10–11；HW4P1/P2 最小闭环</td></tr>
+                    <tr><td>生成模型</td><td>21–24 <span class="badge plan">选修</span></td><td>Representation、Autoencoders、VAE、Diffusion、GAN</td><td>按兴趣选择 Lab 12–14；不阻塞 CS336</td></tr>
+                    <tr><td>其他模型</td><td>25–28 <span class="badge plan">选修</span></td><td>GNN、Reinforcement Learning、Hopfield Networks、Boltzmann Machines</td><td>按研究需求选择；不作为进入 CS336 的前置</td></tr>
                 </tbody>
             </table>
         </div>
@@ -401,9 +402,10 @@
                     <tr><td>Stage 1<br><span class="small">已完成</span></td><td>Lecture 1–5 + Lab 1 + HW0</td><td>能解释 forward、loss、gradient、backprop、optimizer 和基础 MLP 训练</td><td>完成 Lab 1 与 HW0；记录不同 MLP 架构和 optimizer 实验</td></tr>
                     <tr><td>Stage 2<br><span class="small">已完成</span></td><td>Lecture 6–8 + Lab 2–4 + HW1</td><td>能理解优化、正则化、BatchNorm、Dropout、autograd，复现实验并定位训练问题</td><td>完成 Lab 2–4 与 HW1；保留训练曲线和结果分析</td></tr>
                     <tr><td>Stage 3<br><span class="small">已完成</span></td><td>Rec 0.7–0.16 + Lecture 9–12 + Lab 4–6 + HW2</td><td>能使用 Dataset / DataLoader 完成 CNN 训练与验证，并理解卷积网络的梯度传播</td><td>整理 HW2 的 classification / verification 结果</td></tr>
-                    <tr><td>Stage 4<br><span class="small">当前</span></td><td>Rec 0.17–0.19 + Lecture 13–16 + Lab 7–9</td><td>能处理变长序列、CTC、beam search，并使用 WandB 调试</td><td>HW3；模型和数据 pipeline 说明</td></tr>
-                    <tr><td>Stage 5</td><td>0.20–0.25 + Lecture 17–24 + Lab 10–14</td><td>能理解 loss 选择、Transformer、VAE、Diffusion、GAN 的基本训练逻辑</td><td>HW4；至少复现一个生成 / 序列模型实验</td></tr>
-                    <tr><td>Stage 6</td><td>0.26–0.28 + Lecture 25–28 + Lab 15</td><td>能组织完整项目：数据、模型、训练、保存、评估和报告</td><td>Project；最终复习笔记</td></tr>
+                    <tr><td>Stage 4<br><span class="small">已完成主体</span></td><td>Lecture 13–15 + Lab 7–9 + HW3P1/P2</td><td>能处理变长序列、CTC、beam search；已完成 phoneme recognition 的训练/验证/beam decoding pipeline</td><td>HW3P1/P2；CNN + BiLSTM + CTC baseline</td></tr>
+                    <tr><td>Stage 5<br><span class="small">当前</span></td><td>Lecture 16–20 + Lab 10–11 + HW4P1/P2</td><td>能解释 attention、teacher forcing、自回归 decoding、causal mask、Transformer block；完成 LAS 最小闭环</td><td>HW4 最小实现；attention / Transformer shape 与推理流程笔记</td></tr>
+                    <tr><td>Stage 6<br><span class="small">过渡</span></td><td>Rec 0.20–0.25 + CS336 核心内容</td><td>能从训练与服务两个视角理解 Transformer：tokenization、优化、并行、prefill/decode、KV cache、batching</td><td>一个可测的 Transformer / KV-cache benchmark 与性能分析</td></tr>
+                    <tr><td>Stage 7<br><span class="small">按需选修</span></td><td>11-785 Lecture 21–28、Lab 12–15</td><td>按论文方向补生成模型、扩散、GNN 或 RL；不再以“完成全部课程”为硬目标</td><td>与研究主题相关的复现或阅读笔记</td></tr>
                 </tbody>
             </table>
         </div>
@@ -428,10 +430,10 @@
                         <tr><td>7</td><td>Feb 2</td><td>Training V：Optimization、Batch Size、SGD、Mini-batch、Second-order Methods <span class="badge done">已完成</span></td></tr>
                         <tr><td>8</td><td>Feb 4</td><td>Training VI：Optimizers、Regularizers、Batch Normalization、Dropout <span class="badge done">已完成</span></td></tr>
                         <tr><td>9–12</td><td>Feb 9–18</td><td>Convolutional Neural Networks I–IV <span class="badge done">已完成</span></td></tr>
-                        <tr><td>13–14</td><td>Feb 23–25</td><td>Recurrent Neural Networks I–II <span class="badge next">下一阶段</span></td></tr>
-                        <tr><td>15–16</td><td>Mar 9–11</td><td>Seq2Seq、CTC、Blanks、Beam Search</td></tr>
-                        <tr><td>17</td><td>Mar 16</td><td>Language Models、Translation</td></tr>
-                        <tr><td>18–20</td><td>Mar 18–25</td><td>Attention、Transformers、新架构、Large Language Models</td></tr>
+                        <tr><td>13–15</td><td>Feb 23–Mar 9</td><td>Recurrent Neural Networks、Seq2Seq <span class="badge done">已完成</span></td></tr>
+                        <tr><td>16</td><td>Mar 11</td><td>CTC、Blanks、Beam Search <span class="badge next">下一项</span></td></tr>
+                        <tr><td>17</td><td>Mar 16</td><td>Language Models、Translation <span class="badge plan">计划</span></td></tr>
+                        <tr><td>18–20</td><td>Mar 18–25</td><td>Attention、Transformers、新架构、Large Language Models <span class="badge core">CS336 前置</span></td></tr>
                         <tr><td>21–24</td><td>Mar 30–Apr 8</td><td>Representation、Autoencoders、VAE、Diffusion、GAN</td></tr>
                         <tr><td>25–28</td><td>Apr 13–22</td><td>GNN、Reinforcement Learning、Hopfield、Boltzmann Machines</td></tr>
                     </tbody>
@@ -450,11 +452,11 @@
                         <tr><td>4</td><td>Feb 6</td><td>Computing Derivatives and Autograd <span class="badge done">已完成</span></td><td><a href="S26/documents/labs/lab_4/IDL_S26_Lab_4_Computing_Derivatives_%26_Autograd(Students).ipynb">Notebook</a></td></tr>
                         <tr><td>5</td><td>Feb 13</td><td>CNN：Basics and Backprop <span class="badge done">已完成</span></td><td><a href="S26/documents/labs/lab_5/CNN_Basics_Student_Notebook.ipynb">Notebook</a></td></tr>
                         <tr><td>6</td><td>Feb 20</td><td>CNN：Classification and Verification <span class="badge done">已完成</span></td><td><a href="S26/documents/labs/lab_6/S26_CNN_lab06.ipynb">Notebook</a></td></tr>
-                        <tr><td>7</td><td>Feb 27</td><td>RNN Basics <span class="badge next">下一阶段</span></td><td><a href="S26/documents/labs/lab_7/S26_StudentNotebook_RNN_Lab_7.ipynb">Notebook</a></td></tr>
-                        <tr><td>8</td><td>Mar 6</td><td>Kaggle Workshop and Pre-trained Models</td><td class="muted">课程页面</td></tr>
-                        <tr><td>9</td><td>Mar 13</td><td>CTC and Beam Search</td><td><a href="S26/documents/labs/lab_9/S26%20lab9_student_notebook.ipynb">Notebook</a></td></tr>
-                        <tr><td>10</td><td>Mar 20</td><td>Attention、MT、LAS</td><td><a href="S26/documents/labs/lab_10/Student_Notebook_Lab_10.ipynb">Notebook</a></td></tr>
-                        <tr><td>11</td><td>Mar 27</td><td>Transformers</td><td><a href="S26/documents/labs/lab_11/Lab_11_Transformers_S26_Student_Version.ipynb">Notebook</a></td></tr>
+                        <tr><td>7</td><td>Feb 27</td><td>RNN Basics <span class="badge done">已完成</span></td><td><a href="S26/documents/labs/lab_7/S26_StudentNotebook_RNN_Lab_7.ipynb">Notebook</a></td></tr>
+                        <tr><td>8</td><td>Mar 6</td><td>Kaggle Workshop and Pre-trained Models <span class="badge done">已完成</span></td><td class="muted">课程页面</td></tr>
+                        <tr><td>9</td><td>Mar 13</td><td>CTC and Beam Search <span class="badge done">已完成</span></td><td><a href="S26/documents/labs/lab_9/S26%20lab9_student_notebook.ipynb">Notebook</a></td></tr>
+                        <tr><td>10</td><td>Mar 20</td><td>Attention、MT、LAS <span class="badge next">下一项</span></td><td><a href="S26/documents/labs/lab_10/Student_Notebook_Lab_10.ipynb">Notebook</a></td></tr>
+                        <tr><td>11</td><td>Mar 27</td><td>Transformers <span class="badge core">CS336 前置</span></td><td><a href="S26/documents/labs/lab_11/Lab_11_Transformers_S26_Student_Version.ipynb">Notebook</a></td></tr>
                         <tr><td>12</td><td>Apr 3</td><td>Variational Autoencoders</td><td class="muted">课程页面</td></tr>
                         <tr><td>13</td><td>Apr 10</td><td>NF and Stable Diffusion</td><td class="muted">课程页面</td></tr>
                         <tr><td>14</td><td>Apr 17</td><td>GAN</td><td class="muted">课程页面</td></tr>
@@ -472,8 +474,8 @@
                         <tr><td>HW0</td><td class="muted">课程前置 / 个人补充</td><td class="muted">—</td><td class="muted">—</td><td><span class="badge done">已完成</span></td></tr>
                         <tr><td>HW1P1 / HW1P2</td><td>Jan 14</td><td>Jan 23 11:59 PM</td><td>Feb 6 11:59 PM</td><td><span class="badge done">已完成</span></td></tr>
                         <tr><td>HW2P1 / HW2P2</td><td>Feb 6</td><td>Feb 20 11:59 PM</td><td>Feb 27 11:59 PM</td><td><span class="badge done">已完成</span></td></tr>
-                        <tr><td>HW3P1 / HW3P2</td><td>Feb 27</td><td>Mar 20 11:59 PM</td><td>Mar 27 11:59 PM</td><td><span class="badge next">下一阶段</span></td></tr>
-                        <tr><td>HW4P1 / HW4P2</td><td>Mar 27</td><td>Apr 13 11:59 PM</td><td>Apr 24 11:59 PM</td><td><span class="badge plan">计划</span></td></tr>
+                        <tr><td>HW3P1 / HW3P2</td><td>Feb 27</td><td>Mar 20 11:59 PM</td><td>Mar 27 11:59 PM</td><td><span class="badge done">已完成</span></td></tr>
+                        <tr><td>HW4P1 / HW4P2</td><td>Mar 27</td><td>Apr 13 11:59 PM</td><td>Apr 24 11:59 PM</td><td><span class="badge next">当前</span></td></tr>
                         <tr><td>Bonus / Autograd</td><td colspan="3">Apr 24 11:59 PM</td><td><span class="badge plan">计划</span></td></tr>
                     </tbody>
                 </table>
@@ -488,6 +490,24 @@
             <article class="card"><h3>实现</h3><p>能在 `cmu-11785` 中运行 notebook，知道每个输入、输出和设备位置。</p></article>
             <article class="card"><h3>验证</h3><p>至少做一个小实验：改变 shape、参数、loss 或 optimizer，并解释结果。</p></article>
         </div>
+    </section>
+
+    <section>
+        <h2>转向 CS336：面向推理与 KV Cache Offloading</h2>
+        <p class="section-lead">结束点不是“刷完全部旧作业”，而是具备用训练、推理与系统视角阅读和实现 LLM 的能力。按下面顺序进入 CS336。</p>
+        <div class="table-scroll">
+            <table>
+                <thead><tr><th>优先级</th><th>CS336 主题</th><th>为何与当前 11-785 衔接</th><th>面向研究的完成标准</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="badge core">必须</span></td><td>Tokenizer、数据管线、Transformer forward/backward</td><td>承接 HW4P1 的语言模型、Lecture 19–20 的 self-attention 与 causal mask</td><td>从零训练一个小 Transformer，并能解释每个 Tensor 的 shape 与 loss</td></tr>
+                    <tr><td><span class="badge core">必须</span></td><td>优化、mixed precision、distributed training</td><td>承接 11-785 的 optimizer、BatchNorm/Dropout、Recitation 0.20–0.25</td><td>测量吞吐、显存和通信瓶颈；可复现实验配置</td></tr>
+                    <tr><td><span class="badge core">必须</span></td><td>Autoregressive inference：prefill / decode</td><td>承接 HW4 的 teacher forcing、generation 与 beam search</td><td>分别测量 prefill 与逐 token decode latency / throughput</td></tr>
+                    <tr><td><span class="badge core">研究主线</span></td><td>KV cache、continuous batching、paged attention</td><td>把 attention 的 K/V 从概念变为实际显存对象</td><td>实现或剖析 KV-cache allocator，记录容量、带宽与尾延迟</td></tr>
+                    <tr><td><span class="badge plan">论文方向</span></td><td>CPU / CXL KV-cache offloading 与预取</td><td>以 decode 的内存带宽、PCIe/CXL 传输和调度为核心约束</td><td>完成一个可重复 benchmark：GPU-only 对比 offload，报告 TTFT、TPOT、吞吐与显存</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="phase">建议离开 11-785 的节点：完成 Lecture 16–20、Lab 10–11，以及 HW4P1/P2 的最小可运行闭环后，立即进入 CS336；Lecture 21–28 仅按论文阅读需要回补。</div>
     </section>
 
     <footer>
